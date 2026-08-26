@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/app_color.dart';
 import '../../../../core/utils/app_styles.dart';
+import '../../../../core/widgets/primary_button.dart';
 import '../../../categories/presentation/pages/categories_screen.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
+import '../widgets/auth_text_field.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -72,53 +74,41 @@ class _LoginPageState extends State<LoginPage> {
                     style: AppStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 32),
-                  TextFormField(
+                  AuthTextField(
                     controller: usernameController,
-                    decoration: inputDecoration('Username', Icons.person_outline),
+                    hint: 'Username',
+                    icon: Icons.person_outline,
                     validator: (value) => (value == null || value.trim().isEmpty)
                         ? 'Please enter your username'
                         : null,
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
+                  AuthTextField(
                     controller: passwordController,
+                    hint: 'Password',
+                    icon: Icons.lock_outline,
                     obscureText: obscurePassword,
-                    decoration: inputDecoration('Password', Icons.lock_outline).copyWith(
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: AppColors.iconDefault,
-                        ),
-                        onPressed: () => setState(() => obscurePassword = !obscurePassword),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: AppColors.iconDefault,
                       ),
+                      onPressed: () =>
+                          setState(() => obscurePassword = !obscurePassword),
                     ),
-                    validator: (value) =>
-                        (value == null || value.isEmpty) ? 'Please enter your password' : null,
+                    validator: (value) => (value == null || value.isEmpty)
+                        ? 'Please enter your password'
+                        : null,
                   ),
-
                   const SizedBox(height: 28),
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, state) {
-                      final isLoading = state is AuthLoading;
-                      return SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: isLoading ? null : submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 0,
-                          ),
-                          child: isLoading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : Text('Login', style: AppStyles.buttonText.copyWith(fontSize: 15)),
-                        ),
+                      return PrimaryButton(
+                        label: 'Login',
+                        isLoading: state is AuthLoading,
+                        onPressed: submit,
                       );
                     },
                   ),
@@ -149,33 +139,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  InputDecoration inputDecoration(String hint, IconData icon) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: AppStyles.inputHint,
-      prefixIcon: Icon(icon, color: AppColors.iconDefault, size: 20),
-      filled: true,
-      fillColor: AppColors.inputFill,
-      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.error),
       ),
     );
   }

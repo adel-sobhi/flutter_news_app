@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/app_color.dart';
+import '../../../../core/widgets/app_loading_indicator.dart';
 import '../../../categories/presentation/pages/categories_screen.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
@@ -39,9 +40,7 @@ class _SplashScreenState extends State<SplashScreen> {
             );
           }
         },
-        child: const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
+        child: const AppLoadingIndicator(),
       ),
     );
   }

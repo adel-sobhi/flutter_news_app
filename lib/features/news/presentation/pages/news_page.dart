@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/app_color.dart';
+import '../../../../core/widgets/app_loading_indicator.dart';
 import '../../../sources/presentation/cubit/sources_cubit.dart';
 import '../../../sources/presentation/cubit/sources_state.dart';
 import '../cubit/news_cubit.dart';
+import '../widgets/error_retry_view.dart';
 import '../widgets/news_list_section.dart';
 import '../../../sources/presentation/pages/source_horizontal_list.dart';
 
@@ -60,33 +62,14 @@ class _NewsPageState extends State<NewsPage> {
       body: BlocBuilder<SourcesCubit, SourcesState>(
         builder: (context, sourcesState) {
           if (sourcesState is SourcesLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            return const AppLoadingIndicator();
           }
 
           if (sourcesState is SourcesError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      sourcesState.errorMessage.errorMessage,
-                      style: const TextStyle(color: AppColors.error, fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () => context.read<SourcesCubit>().getSources(widget.categoryId),
-                      child: const Text('Try Again'),
-                    ),
-                  ],
-                ),
-              ),
+            return ErrorRetryView(
+              message: sourcesState.errorMessage.errorMessage,
+              onRetry: () =>
+                  context.read<SourcesCubit>().getSources(widget.categoryId),
             );
           }
 

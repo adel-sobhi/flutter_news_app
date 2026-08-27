@@ -1,17 +1,36 @@
-# notes_app
+# Flutter News App
 
-A new Flutter project.
+A news application built with Flutter, following Clean Architecture and a feature-first approach,
+utilizing Cubit for state management. The application provides user authentication alongside smooth
+news browsing by fetching real-time data from REST APIs with local storage support for offline use.
 
-## Getting Started
+## Core Features
 
-This project is a starting point for a Flutter application.
+- Clean Architecture implementation with a feature-first structure to separate layers and organize
+  modules independently.
+- User authentication (Sign up, Sign in, and session management).
+- Utilization of Cubit for state management and reactive UI updates.
+- REST API integration to fetch the latest articles, categories, and sources dynamically.
+- Integration of SQFlite for local storage and caching data for offline usage.
 
-A few resources to get you started if this is your first Flutter project:
+## Tech Stack and Packages
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Framework: Flutter (Dart)
+- Architecture: Clean Architecture (Feature-first)
+- State Management: flutter_bloc / cubit
+- Local Database: sqflite
+- Networking: REST APIs
+- Dependency Injection: get_it / injectable
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Project Structure
+
+lib/
+
+├── core/               
+├── features/           
+│ ├── authentication/   
+│ ├── categories/        
+│ ├── news/             
+│ └── sources/          
+│
+└── main.dart           

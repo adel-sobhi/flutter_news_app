@@ -4,7 +4,7 @@ import 'package:injectable/injectable.dart';
 import 'package:notes_app/features/sources/data/datasources/sources_remote_datasource/sources_remote_datasource.dart';
 import 'package:notes_app/features/sources/data/models/sources_response_model.dart';
 
-import '../../../../../core/api/Api_manager.dart';
+import '../../../../../core/api/api_manager.dart';
 import '../../../../../core/errors/errors.dart';
 import '../../../../../core/errors/exceptions.dart';
 

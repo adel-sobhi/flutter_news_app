@@ -37,12 +37,10 @@ class ApiManager {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
-        print(' [Login] Success: $json');
         return LoginResponseModel.fromJson(json);
       }
 
       if (response.statusCode == 400 || response.statusCode == 401) {
-        print(' [Login] Failed: ${response.statusCode}');
 
         throw ServerException('Invalid username or password');
       }
@@ -83,11 +81,9 @@ class ApiManager {
       if (response.statusCode >= 200 && response.statusCode < 300) {
 
         final json = jsonDecode(response.body) as Map<String, dynamic>;
-        print(' [Register] Success: $json');
         return RegisterResponseModel.fromJson(json);
 
       }
-      print(' [Register] Failed: ${response.statusCode}');
       throw ServerException();
     } on SocketException {
       throw NetworkException();

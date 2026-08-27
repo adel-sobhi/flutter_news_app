@@ -12,7 +12,7 @@ import 'news_item_card.dart';
 class NewsListSection extends StatefulWidget {
   final String sourceId;
 
-  const NewsListSection({required this.sourceId});
+  const NewsListSection({super.key, required this.sourceId});
 
   @override
   State<NewsListSection> createState() => _NewsListSectionState();

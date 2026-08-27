@@ -4,15 +4,16 @@ import 'package:notes_app/features/authentication/domain/entities/login_response
 
 class LoginResponseModel extends LoginResponseEntity {
   LoginResponseModel({
-      this.accessToken, 
-      this.refreshToken, 
-      this.id, 
-      this.username, 
-      this.email, 
-      this.firstName, 
-      this.lastName, 
-      this.gender, 
-      this.image,});
+    super.accessToken,
+    super.refreshToken,
+    super.id,
+    super.username,
+    super.email,
+    super.firstName,
+    super.lastName,
+    super.gender,
+    super.image,
+  });
 
   LoginResponseModel.fromJson(dynamic json) {
     accessToken = json['accessToken'];
@@ -25,15 +26,6 @@ class LoginResponseModel extends LoginResponseEntity {
     gender = json['gender'];
     image = json['image'];
   }
-  String? accessToken;
-  String? refreshToken;
-  num? id;
-  String? username;
-  String? email;
-  String? firstName;
-  String? lastName;
-  String? gender;
-  String? image;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};

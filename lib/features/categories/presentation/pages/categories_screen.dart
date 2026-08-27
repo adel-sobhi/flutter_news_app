@@ -82,7 +82,7 @@ class CategoriesScreen extends StatelessWidget {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -94,7 +94,7 @@ class CategoriesScreen extends StatelessWidget {
                         width: 55,
                         height: 55,
                         decoration: BoxDecoration(
-                          color: category.color.withOpacity(0.15),
+                          color: category.color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(

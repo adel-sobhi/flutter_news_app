@@ -1,5 +1,4 @@
 import '../../../sources/data/models/sources_response_model.dart';
-import '../../../sources/domain/entities/sources_response_entities.dart';
 import '../../domain/entities/news_response_entities.dart';
 
 class NewsResponseModel extends NewsResponseEntity {

@@ -63,7 +63,7 @@ import '../../features/sources/domain/repositories/sources_repository.dart'
 import '../../features/sources/domain/usecases/get_sources_use_case.dart'
     as _i851;
 import '../../features/sources/presentation/cubit/sources_cubit.dart' as _i910;
-import '../api/Api_manager.dart' as _i571;
+import '../api/api_manager.dart' as _i571;
 import 'secure_storage_module.dart' as _i897;
 
 extension GetItInjectableX on _i174.GetIt {

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/utils/app_color.dart';
 import '../../../../core/utils/app_styles.dart';
+import '../../../../core/widgets/app_loading_indicator.dart';
 import '../cubit/news_cubit.dart';
 import '../cubit/news_state.dart';
+import 'error_retry_view.dart';
 import 'news_item_card.dart';
 
 class NewsListSection extends StatefulWidget {
   final String sourceId;
 
-  const NewsListSection({required this.sourceId});
+  const NewsListSection({super.key, required this.sourceId});
 
   @override
   State<NewsListSection> createState() => _NewsListSectionState();
@@ -48,35 +51,14 @@ class _NewsListSectionState extends State<NewsListSection> {
     return BlocBuilder<NewsCubit, NewsState>(
       builder: (context, state) {
         if (state is NewsLoading || state is NewsInitial) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+          return const AppLoadingIndicator();
         }
 
         if (state is NewsError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.wifi_off_rounded, size: 40, color: AppColors.textLightHint),
-                  const SizedBox(height: 12),
-                  Text(
-                    state.errorMessage.errorMessage,
-                    style: const TextStyle(color: AppColors.error, fontSize: 15),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () => context.read<NewsCubit>().getNews(widget.sourceId),
-                    child: const Text('Try Again'),
-                  ),
-                ],
-              ),
-            ),
+          return ErrorRetryView(
+            icon: Icons.wifi_off_rounded,
+            message: state.errorMessage.errorMessage,
+            onRetry: () => context.read<NewsCubit>().getNews(widget.sourceId),
           );
         }
 

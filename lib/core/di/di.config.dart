@@ -66,6 +66,7 @@ import '../../features/sources/domain/usecases/get_sources_use_case.dart'
     as _i851;
 import '../../features/sources/presentation/cubit/sources_cubit.dart' as _i910;
 import '../api/api_manager.dart' as _i1047;
+import '../services/fcm_service.dart' as _i928;
 import 'firebase_module.dart' as _i616;
 import 'secure_storage_module.dart' as _i897;
 
@@ -87,6 +88,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i974.FirebaseFirestore>(() => firebaseModule.firestore);
     gh.lazySingleton<_i558.FlutterSecureStorage>(
         () => secureStorageModule.secureStorage);
+    gh.lazySingleton<_i928.FcmService>(() => _i928.FcmService());
     gh.factory<_i601.SourcesRemoteDatasource>(() =>
         _i566.SourcesRemoteDatasourceImpl(apiManager: gh<_i1047.ApiManager>()));
     gh.factory<_i989.NewsRemoteDatasource>(() =>

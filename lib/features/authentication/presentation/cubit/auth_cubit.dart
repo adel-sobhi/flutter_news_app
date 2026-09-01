@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
@@ -29,19 +28,16 @@ class AuthCubit extends Cubit<AuthState> {
     emit(isLoggedIn ? AuthAuthenticated() : AuthUnauthenticated());
   }
 
-  Future<void> login({required String username, required String password}) async {
+  Future<void> login({required String email, required String password}) async {
     emit(AuthLoading());
-    debugPrint(' [Login] Sending request for username: "$username"...');
 
-    final result = await loginUseCase(username: username, password: password);
+    final result = await loginUseCase(email: email, password: password);
 
     result.fold(
           (error) {
-        debugPrint(' [Login] Failed: ${error.errorMessage}');
         emit(AuthError(error.errorMessage));
       },
           (user) {
-        debugPrint(' [Login] Success: welcome "${user.username}" (id: ${user.id})');
         emit(LoginSuccess(user));
       },
     );
@@ -55,7 +51,6 @@ class AuthCubit extends Cubit<AuthState> {
     required String password,
   }) async {
     emit(AuthLoading());
-    debugPrint('[Register] Sending request for username: "$username"...');
 
     final result = await registerUseCase(
       firstName: firstName,
@@ -67,11 +62,9 @@ class AuthCubit extends Cubit<AuthState> {
 
     result.fold(
           (error) {
-        debugPrint(' [Register] Failed: ${error.errorMessage}');
         emit(AuthError(error.errorMessage));
       },
           (user) {
-        debugPrint(' [Register] Success: created user "${user.username}" (id: ${user.id})');
         emit(RegisterSuccess());
       },
     );

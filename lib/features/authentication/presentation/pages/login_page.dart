@@ -19,13 +19,14 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final formKey = GlobalKey<FormState>();
-  final usernameController = TextEditingController();
+  final emailController = TextEditingController();
+
   final passwordController = TextEditingController();
   bool obscurePassword = true;
 
   @override
   void dispose() {
-    usernameController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -33,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
   void submit() {
     if (formKey.currentState!.validate()) {
       context.read<AuthCubit>().login(
-            username: usernameController.text.trim(),
+            email: emailController.text.trim(),
             password: passwordController.text,
           );
     }
@@ -75,13 +76,22 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 32),
                   AuthTextField(
-                    controller: usernameController,
-                    hint: 'Username',
-                    icon: Icons.person_outline,
-                    validator: (value) => (value == null || value.trim().isEmpty)
-                        ? 'Please enter your username'
-                        : null,
-                  ),
+                      // controller: usernameController,
+                      // hint: 'Username',
+                      // icon: Icons.person_outline,
+                      // validator: (value) => (value == null || value.trim().isEmpty)
+                      //     ? 'Please enter your username'
+                      //     : null,
+                      controller: emailController,
+                      hint: 'Email',
+                      icon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty)
+                          return 'Required';
+                        if (!value.contains('@')) return 'Enter a valid email';
+                        return null;
+                      }),
                   const SizedBox(height: 16),
                   AuthTextField(
                     controller: passwordController,

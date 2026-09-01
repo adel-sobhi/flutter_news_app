@@ -16,10 +16,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Errors, LoginResponseEntity>> login({
-    required String username,
+    required String email,
     required String password,
   }) async {
-    final either = await remoteDataSource.login(username: username, password: password);
+    final either =
+        await remoteDataSource.login(email: email, password: password);
 
     return either.fold(
       (error) async => Left(error),

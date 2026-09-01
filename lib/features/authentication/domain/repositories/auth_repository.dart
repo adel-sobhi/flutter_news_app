@@ -6,7 +6,7 @@ import '../entities/register_response_entities.dart';
 
 abstract class AuthRepository {
   Future<Either<Errors, LoginResponseEntity>> login({
-    required String username,
+    required String email,
     required String password,
   });
 

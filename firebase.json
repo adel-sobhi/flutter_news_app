@@ -1,0 +1,22 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "news-app-cad36",
+          "appId": "1:70836476218:android:6bfec6a104271341211803",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "news-app-cad36",
+          "configurations": {
+            "android": "1:70836476218:android:6bfec6a104271341211803",
+            "ios": "1:70836476218:ios:a2a8a4930e9ab495211803"
+          }
+        }
+      }
+    }
+  }
+}

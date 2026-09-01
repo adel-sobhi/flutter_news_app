@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "70836476218",
+    "project_id": "news-app-cad36",
+    "storage_bucket": "news-app-cad36.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:70836476218:android:6bfec6a104271341211803",
+        "android_client_info": {
+          "package_name": "com.example.notes_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbLktKUO7mqyvVKWDFhmw0MPpThiIWwwQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

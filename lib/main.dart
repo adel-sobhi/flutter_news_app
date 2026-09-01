@@ -15,18 +15,30 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await configureDependencies();
-  await dotenv.load(fileName: ".env");
+
+  // 1. تهيئة فايربيز الأساسية فقط لضمان عمل الإشعارات والربط السريع
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // لازم يتسجل قبل runApp عشان يشتغل حتى لو التطبيق مقفول تمامًا
+
+  // تسجيل هاندلر الخلفية للإشعارات
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // يطلب إذن الإشعارات + يعمل subscribe للـ topic + يستقبل
-  // الإشعارات وقت ما التطبيق يكون فاتح (foreground)
-  await getIt<FcmService>().initialize();
+  // 2. تشغيل واجهة التطبيق فوراً بدون تأخير
   runApp(const MyApp());
+
+  // 3. تهيئة باقي الخدمات والحقن (DI, Env, FCM) في الخلفية بعد الإطلاق
+  _initBackgroundServices();
+}
+
+void _initBackgroundServices() async {
+  try {
+    await configureDependencies();
+    await dotenv.load(fileName: ".env");
+    await getIt<FcmService>().initialize();
+  } catch (e) {
+    debugPrint("Error initializing background services: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {

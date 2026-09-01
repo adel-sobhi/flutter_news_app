@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:injectable/injectable.dart';
 
@@ -18,19 +19,32 @@ class FcmService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
-    await _requestPermission();
-    await _initLocalNotifications();
-    await _subscribeToNewsTopic();
-    _listenToForegroundMessages();
-    _listenToNotificationTaps();
+    try {
+      await _requestPermission();
+      await _messaging.setAutoInitEnabled(true);
+      await _initLocalNotifications();
+
+      // طباعة التوكن عشان تقدر تجربه يدوي من فايربيز كونسول
+      String? token = await _messaging.getToken();
+      debugPrint("==========================================");
+      debugPrint("FCM Token: $token");
+      debugPrint("==========================================");
+
+      await _subscribeToNewsTopic();
+      _listenToForegroundMessages();
+      _listenToNotificationTaps();
+    } catch (e) {
+      debugPrint("Error initializing FCM Service: $e");
+    }
   }
 
   Future<void> _requestPermission() async {
-    await _messaging.requestPermission(
+    NotificationSettings settings = await _messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
+    debugPrint('User granted permission: ${settings.authorizationStatus}');
   }
 
   Future<void> _initLocalNotifications() async {
@@ -45,7 +59,6 @@ class FcmService {
       iOS: iosInit,
     );
 
-    // استخدام الباراميتر المسمى settings حسب إصدار حزمتك
     await _localNotifications.initialize(
       settings: initSettings,
     );
@@ -57,7 +70,12 @@ class FcmService {
   }
 
   Future<void> _subscribeToNewsTopic() async {
-    await _messaging.subscribeToTopic(kNewsTopic);
+    try {
+      await _messaging.subscribeToTopic(kNewsTopic);
+      debugPrint("Successfully subscribed to topic: $kNewsTopic");
+    } catch (e) {
+      debugPrint("Failed to subscribe to topic: $e");
+    }
   }
 
   void _listenToForegroundMessages() {
@@ -65,7 +83,6 @@ class FcmService {
       final notification = message.notification;
       if (notification == null) return;
 
-      // استخدام الباراميترات المسمى لعرض الإشعار
       _localNotifications.show(
         id: notification.hashCode,
         title: notification.title,

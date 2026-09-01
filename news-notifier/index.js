@@ -36,7 +36,7 @@ async function checkNews() {
 
         const message = {
           notification: {
-            title: "خبر عاجل 📰",
+            title: "Breaking News",
             body: latestTitle,
           },
           data: {

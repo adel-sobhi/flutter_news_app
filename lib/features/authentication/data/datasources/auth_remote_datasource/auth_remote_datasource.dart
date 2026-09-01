@@ -6,7 +6,7 @@ import '../../models/register_response_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<Either<Errors, LoginResponseModel>> login({
-    required String username,
+    required String email,
     required String password,
   });
 

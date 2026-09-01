@@ -13,11 +13,11 @@ class LoginUseCase {
   LoginUseCase(this.repository);
 
   Future<Either<Errors, LoginResponseEntity>> call({
-    required String username,
+    required String email,
     required String password,
   }) {
     return repository.login(
-      username: username,
+      email: email,
       password: password,
     );
   }

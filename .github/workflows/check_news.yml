@@ -1,0 +1,31 @@
+name: Check News and Send Notification
+
+on:
+  schedule:
+    - cron: '0 * * * *' # يعمل تلقائياً مع بداية كل ساعة
+  workflow_dispatch: # يتيح لك تشغيله يدوياً من زر في موقع GitHub متى شئت
+
+jobs:
+  run-news-checker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd news-notifier
+          npm install
+
+      - name: Run news checker script
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+        run: |
+          cd news-notifier
+          node index.js

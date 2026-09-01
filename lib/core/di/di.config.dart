@@ -9,6 +9,8 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:cloud_firestore/cloud_firestore.dart' as _i974;
+import 'package:firebase_auth/firebase_auth.dart' as _i59;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart' as _i558;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
@@ -63,7 +65,9 @@ import '../../features/sources/domain/repositories/sources_repository.dart'
 import '../../features/sources/domain/usecases/get_sources_use_case.dart'
     as _i851;
 import '../../features/sources/presentation/cubit/sources_cubit.dart' as _i910;
-import '../api/api_manager.dart' as _i571;
+import '../api/api_manager.dart' as _i1047;
+import '../services/fcm_service.dart' as _i928;
+import 'firebase_module.dart' as _i616;
 import 'secure_storage_module.dart' as _i897;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -77,20 +81,26 @@ extension GetItInjectableX on _i174.GetIt {
       environment,
       environmentFilter,
     );
+    final firebaseModule = _$FirebaseModule();
     final secureStorageModule = _$SecureStorageModule();
-    gh.singleton<_i571.ApiManager>(() => _i571.ApiManager());
+    gh.singleton<_i1047.ApiManager>(() => _i1047.ApiManager());
+    gh.lazySingleton<_i59.FirebaseAuth>(() => firebaseModule.firebaseAuth);
+    gh.lazySingleton<_i974.FirebaseFirestore>(() => firebaseModule.firestore);
     gh.lazySingleton<_i558.FlutterSecureStorage>(
         () => secureStorageModule.secureStorage);
+    gh.lazySingleton<_i928.FcmService>(() => _i928.FcmService());
+    gh.factory<_i601.SourcesRemoteDatasource>(() =>
+        _i566.SourcesRemoteDatasourceImpl(apiManager: gh<_i1047.ApiManager>()));
+    gh.factory<_i989.NewsRemoteDatasource>(() =>
+        _i660.NewsRemoteDatasourceImpl(apiManager: gh<_i1047.ApiManager>()));
     gh.factory<_i641.SourcesLocalDatasource>(
         () => _i478.SourcesLocalDatasourceImpl());
     gh.factory<_i623.NewsLocalDatasource>(
         () => _i132.NewsLocalDatasourceImpl());
-    gh.factory<_i601.SourcesRemoteDatasource>(() =>
-        _i566.SourcesRemoteDatasourceImpl(apiManager: gh<_i571.ApiManager>()));
-    gh.factory<_i755.AuthRemoteDataSource>(() =>
-        _i998.AuthRemoteDataSourceImpl(apiManager: gh<_i571.ApiManager>()));
-    gh.factory<_i989.NewsRemoteDatasource>(() =>
-        _i660.NewsRemoteDatasourceImpl(apiManager: gh<_i571.ApiManager>()));
+    gh.factory<_i755.AuthRemoteDataSource>(() => _i998.AuthRemoteDataSourceImpl(
+          firebaseAuth: gh<_i59.FirebaseAuth>(),
+          firestore: gh<_i974.FirebaseFirestore>(),
+        ));
     gh.factory<_i258.NewsRepository>(() => _i164.NewsRepositoryImpl(
           remoteDatasource: gh<_i989.NewsRemoteDatasource>(),
           localDatasource: gh<_i623.NewsLocalDatasource>(),
@@ -130,5 +140,7 @@ extension GetItInjectableX on _i174.GetIt {
     return this;
   }
 }
+
+class _$FirebaseModule extends _i616.FirebaseModule {}
 
 class _$SecureStorageModule extends _i897.SecureStorageModule {}

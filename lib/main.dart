@@ -15,18 +15,26 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await configureDependencies();
-  await dotenv.load(fileName: ".env");
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // لازم يتسجل قبل runApp عشان يشتغل حتى لو التطبيق مقفول تمامًا
+
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // يطلب إذن الإشعارات + يعمل subscribe للـ topic + يستقبل
-  // الإشعارات وقت ما التطبيق يكون فاتح (foreground)
-  await getIt<FcmService>().initialize();
   runApp(const MyApp());
+
+  initBackgroundServices();
+}
+
+void initBackgroundServices() async {
+  try {
+    await configureDependencies();
+    await dotenv.load(fileName: ".env");
+    await getIt<FcmService>().initialize();
+  } catch (e) {
+    debugPrint("Error initializing background services: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {

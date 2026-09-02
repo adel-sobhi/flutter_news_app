@@ -2,16 +2,18 @@ name: Check News and Send Notification
 
 on:
   schedule:
-    - cron: '0 * * * *' # يعمل تلقائياً مع بداية كل ساعة
-  workflow_dispatch: # يتيح لك تشغيله يدوياً من زر في موقع GitHub متى شئت
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   run-news-checker:
+    # نطلب من GitHub إنه يوفر لنا جهاز افتراضي     بيفتح مؤقتًا عشان ينفذ المهمة ويقفل لوحده بعدها.
     runs-on: ubuntu-latest
     steps:
+      # عشان يدخل على الريبو بتاعتك ويسحب نسخة من كل ملفاتك
       - name: Checkout repository
         uses: actions/checkout@v3
-
+      #بينزل Node.js إصدار 18 على الجهاز الافتراضي
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:

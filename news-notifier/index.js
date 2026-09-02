@@ -36,7 +36,7 @@ async function checkNews() {
 
         const message = {
           notification: {
-            title: "خبر عاجل 📰",
+            title: "Breaking News",
             body: latestTitle,
           },
           data: {
@@ -52,7 +52,8 @@ async function checkNews() {
           title: latestTitle,
           updated_at: admin.firestore.FieldValue.serverTimestamp()
         });
-      } else {
+      }
+      else {
         console.log("No new news.");
       }
     }

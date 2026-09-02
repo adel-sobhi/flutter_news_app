@@ -14,32 +14,32 @@ const AndroidNotificationChannel kNewsChannel = AndroidNotificationChannel(
 
 @lazySingleton
 class FcmService {
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications =
+  final FirebaseMessaging messaging = FirebaseMessaging.instance;
+  final FlutterLocalNotificationsPlugin localNotifications =
       FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
     try {
-      await _requestPermission();
-      await _messaging.setAutoInitEnabled(true);
-      await _initLocalNotifications();
+      await requestPermission();
+      await messaging.setAutoInitEnabled(true);
+      await initLocalNotifications();
 
       // طباعة التوكن عشان تقدر تجربه يدوي من فايربيز كونسول
-      String? token = await _messaging.getToken();
+      String? token = await messaging.getToken();
       debugPrint("==========================================");
       debugPrint("FCM Token: $token");
       debugPrint("==========================================");
 
-      await _subscribeToNewsTopic();
-      _listenToForegroundMessages();
-      _listenToNotificationTaps();
+      await subscribeToNewsTopic();
+      listenToForegroundMessages();
+      listenToNotificationTaps();
     } catch (e) {
       debugPrint("Error initializing FCM Service: $e");
     }
   }
 
-  Future<void> _requestPermission() async {
-    NotificationSettings settings = await _messaging.requestPermission(
+  Future<void> requestPermission() async {
+    NotificationSettings settings = await messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
@@ -47,7 +47,7 @@ class FcmService {
     debugPrint('User granted permission: ${settings.authorizationStatus}');
   }
 
-  Future<void> _initLocalNotifications() async {
+  Future<void> initLocalNotifications() async {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -59,31 +59,31 @@ class FcmService {
       iOS: iosInit,
     );
 
-    await _localNotifications.initialize(
+    await localNotifications.initialize(
       settings: initSettings,
     );
 
-    await _localNotifications
+    await localNotifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(kNewsChannel);
   }
 
-  Future<void> _subscribeToNewsTopic() async {
+  Future<void> subscribeToNewsTopic() async {
     try {
-      await _messaging.subscribeToTopic(kNewsTopic);
+      await messaging.subscribeToTopic(kNewsTopic);
       debugPrint("Successfully subscribed to topic: $kNewsTopic");
     } catch (e) {
       debugPrint("Failed to subscribe to topic: $e");
     }
   }
 
-  void _listenToForegroundMessages() {
+  void listenToForegroundMessages() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final notification = message.notification;
       if (notification == null) return;
 
-      _localNotifications.show(
+      localNotifications.show(
         id: notification.hashCode,
         title: notification.title,
         body: notification.body,
@@ -103,10 +103,9 @@ class FcmService {
     });
   }
 
-  void _listenToNotificationTaps() {
+  void listenToNotificationTaps() {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       final newsUrl = message.data['url'];
-      // TODO: يمكنك توجيه المستخدم لصفحة التفاصيل هنا باستخدام newsUrl
     });
   }
 }

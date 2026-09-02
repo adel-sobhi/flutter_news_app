@@ -52,7 +52,8 @@ async function checkNews() {
           title: latestTitle,
           updated_at: admin.firestore.FieldValue.serverTimestamp()
         });
-      } else {
+      }
+      else {
         console.log("No new news.");
       }
     }

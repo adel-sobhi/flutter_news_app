@@ -16,22 +16,18 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. تهيئة فايربيز الأساسية فقط لضمان عمل الإشعارات والربط السريع
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // تسجيل هاندلر الخلفية للإشعارات
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // 2. تشغيل واجهة التطبيق فوراً بدون تأخير
   runApp(const MyApp());
 
-  // 3. تهيئة باقي الخدمات والحقن (DI, Env, FCM) في الخلفية بعد الإطلاق
-  _initBackgroundServices();
+  initBackgroundServices();
 }
 
-void _initBackgroundServices() async {
+void initBackgroundServices() async {
   try {
     await configureDependencies();
     await dotenv.load(fileName: ".env");

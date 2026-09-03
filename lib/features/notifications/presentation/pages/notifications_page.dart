@@ -22,6 +22,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Future<void> _openNotification(NotificationEntity notification) async {
     if (!notification.isRead) {
       await _notificationStore.markAsRead(notification.id);
+      if (mounted) {
+        setState(() {});
+      }
     }
 
     if (notification.url != null && notification.url!.isNotEmpty) {
@@ -31,14 +34,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         notification.url,
         notification.imageUrl,
       );
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
       return;
-    }
-
-    if (mounted) {
-      setState(() {});
     }
   }
 

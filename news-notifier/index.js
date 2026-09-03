@@ -17,7 +17,6 @@ async function checkNews() {
   try {
     const response = await fetch(url);
     const data = await response.json();
-
     if (data.articles && data.articles.length > 0) {
       const latestArticle = data.articles[0];
       const latestTitle = latestArticle.title;
@@ -34,13 +33,25 @@ async function checkNews() {
       if (savedTitle !== latestTitle) {
         console.log("New news found: " + latestTitle);
 
+        const payload = JSON.stringify({
+          title: latestTitle,
+          body: latestTitle,
+          url: latestUrl,
+          imageUrl: latestArticle.urlToImage || '',
+        });
+
         const message = {
           notification: {
             title: "Breaking News",
             body: latestTitle,
           },
           data: {
-            url: latestUrl
+            type: 'news',
+            title: latestTitle,
+            body: latestTitle,
+            url: latestUrl,
+            imageUrl: latestArticle.urlToImage || '',
+            payload,
           },
           topic: "all_users"
         };

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/di/di.dart';
+import 'core/services/app_navigation.dart';
 import 'core/services/fcm_background_handler.dart';
 import 'core/services/fcm_service.dart';
 import 'features/authentication/presentation/cubit/auth_cubit.dart';
@@ -48,9 +49,10 @@ class MyApp extends StatelessWidget {
         BlocProvider<SourcesCubit>(create: (context) => getIt<SourcesCubit>()),
         BlocProvider<NewsCubit>(create: (context) => getIt<NewsCubit>()),
       ],
-      child: const MaterialApp(
+      child: MaterialApp(
+        navigatorKey: AppNavigation.navigatorKey,
         debugShowCheckedModeBanner: false,
-        home: SplashScreen(),
+        home: const SplashScreen(),
       ),
     );
   }

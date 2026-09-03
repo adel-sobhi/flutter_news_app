@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../features/news/domain/entities/news_response_entities.dart';
 import '../../features/news/presentation/pages/news_page.dart';
 import '../../features/news/presentation/widgets/article_details_sheet.dart';
+import 'notification_store.dart';
 
 class AppNavigation {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -20,6 +21,7 @@ class AppNavigation {
     String? publishedAt,
     String? description,
     String? content,
+    String? notificationId,
   }) {
     if (title == null && body == null && (url == null || url.isEmpty)) {
       return;
@@ -31,6 +33,13 @@ class AppNavigation {
     // If we know the target source/category, open the real news page and let it resolve the
     // article from the same API data that the user is already viewing.
     if ((sourceId ?? '').isNotEmpty || (categoryId ?? '').isNotEmpty) {
+      if (notificationId != null && notificationId.isNotEmpty) {
+        try {
+          final store = NotificationStore();
+          store.markAsRead(notificationId);
+        } catch (_) {}
+      }
+
       final route = MaterialPageRoute(
         builder: (_) => NewsPage(
           categoryId: categoryId ?? 'general',
@@ -91,6 +100,7 @@ class AppNavigation {
           publishedAt: decoded['publishedAt']?.toString(),
           description: decoded['description']?.toString(),
           content: decoded['content']?.toString(),
+          notificationId: decoded['id']?.toString(),
         );
         return;
       }

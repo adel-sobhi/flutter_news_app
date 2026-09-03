@@ -54,6 +54,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
       notification.imageUrl,
       sourceId: notification.sourceId,
       categoryId: notification.categoryId,
+      author: notification.author,
+      publishedAt: notification.publishedAt,
+      description: notification.description,
+      content: notification.content,
+      notificationId: notification.id,
     );
   }
 

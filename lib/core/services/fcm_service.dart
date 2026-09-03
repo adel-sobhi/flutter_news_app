@@ -88,10 +88,11 @@ class FcmService {
   }
 
   Future<void> _saveIncomingNotification(RemoteMessage message) async {
-    final title =
-        message.notification?.title ?? message.data['title'] ?? 'Breaking News';
-    final body = message.notification?.body ??
-        message.data['body'] ??
+    final title = message.data['title']?.toString() ??
+        message.notification?.title ??
+        'Breaking News';
+    final body = message.data['body']?.toString() ??
+        message.notification?.body ??
         'New article available';
     final url = message.data['url']?.toString();
     final imageUrl = message.data['imageUrl']?.toString();
@@ -99,15 +100,25 @@ class FcmService {
         message.data['source_id']?.toString();
     final categoryId = message.data['categoryId']?.toString() ??
         message.data['category_id']?.toString();
+    final author = message.data['author']?.toString();
+    final publishedAt = message.data['publishedAt']?.toString();
+    final description = message.data['description']?.toString();
+    final content = message.data['content']?.toString();
+    final notificationId =
+        message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}';
 
     final notification = NotificationEntity(
-      id: '${DateTime.now().millisecondsSinceEpoch}',
+      id: notificationId,
       title: title,
       body: body,
       url: url,
       imageUrl: imageUrl,
       sourceId: sourceId,
       categoryId: categoryId,
+      author: author,
+      publishedAt: publishedAt,
+      description: description,
+      content: content,
       createdAt: DateTime.now(),
     );
 
@@ -127,6 +138,7 @@ class FcmService {
       final unreadCount = await _notificationStore.getUnreadCount();
 
       final payload = jsonEncode({
+        'id': message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}',
         'title': message.data['title']?.toString() ??
             notification.title ??
             'Breaking News',
@@ -173,6 +185,7 @@ class FcmService {
   void listenToNotificationTaps() {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       final payload = jsonEncode({
+        'id': message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}',
         'title': message.data['title']?.toString() ??
             message.notification?.title ??
             'Breaking News',
@@ -196,6 +209,7 @@ class FcmService {
     FirebaseMessaging.instance.getInitialMessage().then((message) async {
       if (message == null) return;
       final payload = jsonEncode({
+        'id': message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}',
         'title': message.data['title']?.toString() ??
             message.notification?.title ??
             'Breaking News',

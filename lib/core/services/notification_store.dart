@@ -20,7 +20,7 @@ class NotificationStore {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE $_tableName (
@@ -31,6 +31,10 @@ class NotificationStore {
             imageUrl TEXT,
             sourceId TEXT,
             categoryId TEXT,
+            author TEXT,
+            publishedAt TEXT,
+            description TEXT,
+            content TEXT,
             isRead INTEGER NOT NULL DEFAULT 0,
             createdAt TEXT NOT NULL
           )
@@ -47,6 +51,21 @@ class NotificationStore {
           if (!columnNames.contains('categoryId')) {
             await db
                 .execute('ALTER TABLE $_tableName ADD COLUMN categoryId TEXT');
+          }
+        }
+        if (oldVersion < 3) {
+          final columns = await db.rawQuery('PRAGMA table_info($_tableName)');
+          final columnNames = columns.map((c) => c['name'] as String).toSet();
+          for (final column in [
+            'author',
+            'publishedAt',
+            'description',
+            'content'
+          ]) {
+            if (!columnNames.contains(column)) {
+              await db
+                  .execute('ALTER TABLE $_tableName ADD COLUMN $column TEXT');
+            }
           }
         }
       },
@@ -99,6 +118,10 @@ class NotificationStore {
         'imageUrl': notification.imageUrl,
         'sourceId': notification.sourceId,
         'categoryId': notification.categoryId,
+        'author': notification.author,
+        'publishedAt': notification.publishedAt,
+        'description': notification.description,
+        'content': notification.content,
         'isRead': notification.isRead ? 1 : 0,
         'createdAt': notification.createdAt.toIso8601String(),
       },

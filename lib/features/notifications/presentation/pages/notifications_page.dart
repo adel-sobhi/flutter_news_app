@@ -190,7 +190,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 ),
                               ),
                               title: Text(
-                                notification.body,
+                                notification.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -203,10 +203,39 @@ class _NotificationsPageState extends State<NotificationsPage> {
                               trailing:
                                   const Icon(Icons.keyboard_arrow_down_rounded),
                               children: [
+                                if ((notification.author ?? '').isNotEmpty)
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'By ${notification.author}',
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                if ((notification.publishedAt ?? '').isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        notification.publishedAt!,
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: 8),
                                 Align(
                                   alignment: Alignment.centerLeft,
                                   child: Text(
-                                    notification.body,
+                                    notification.description ??
+                                        notification.body,
                                     style: const TextStyle(
                                       color: AppColors.textPrimary,
                                       fontSize: 13,
@@ -214,6 +243,22 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                     ),
                                   ),
                                 ),
+                                if ((notification.content ?? '')
+                                    .isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      notification.content!,
+                                      style: const TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 12,
+                                        height: 1.55,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                                 const SizedBox(height: 12),
                                 if (notification.url != null &&
                                     notification.url!.isNotEmpty)

@@ -95,6 +95,10 @@ class FcmService {
         'New article available';
     final url = message.data['url']?.toString();
     final imageUrl = message.data['imageUrl']?.toString();
+    final sourceId = message.data['sourceId']?.toString() ??
+        message.data['source_id']?.toString();
+    final categoryId = message.data['categoryId']?.toString() ??
+        message.data['category_id']?.toString();
 
     final notification = NotificationEntity(
       id: '${DateTime.now().millisecondsSinceEpoch}',
@@ -102,10 +106,15 @@ class FcmService {
       body: body,
       url: url,
       imageUrl: imageUrl,
+      sourceId: sourceId,
+      categoryId: categoryId,
       createdAt: DateTime.now(),
     );
 
     await _notificationStore.addNotification(notification);
+
+    // update app badge to reflect new unread count
+    await updateBadgeCount();
   }
 
   void listenToForegroundMessages() {
@@ -115,6 +124,8 @@ class FcmService {
       final notification = message.notification;
       if (notification == null) return;
 
+      final unreadCount = await _notificationStore.getUnreadCount();
+
       final payload = jsonEncode({
         'title': notification.title ?? message.data['title'] ?? 'Breaking News',
         'body': notification.body ??
@@ -122,6 +133,10 @@ class FcmService {
             'New article available',
         'url': message.data['url']?.toString(),
         'imageUrl': message.data['imageUrl']?.toString(),
+        'sourceId': message.data['sourceId']?.toString() ??
+            message.data['source_id']?.toString(),
+        'categoryId': message.data['categoryId']?.toString() ??
+            message.data['category_id']?.toString(),
       });
 
       await localNotifications.show(
@@ -136,11 +151,16 @@ class FcmService {
             importance: Importance.high,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
+            // set number so some Android launchers show badge counts
+            number: unreadCount,
           ),
-          iOS: const DarwinNotificationDetails(),
+          iOS: DarwinNotificationDetails(badgeNumber: unreadCount),
         ),
         payload: payload,
       );
+
+      // Also try to set the iOS app badge explicitly
+      await updateBadgeCount();
     });
   }
 
@@ -155,11 +175,15 @@ class FcmService {
             'New article available',
         'url': message.data['url']?.toString(),
         'imageUrl': message.data['imageUrl']?.toString(),
+        'sourceId': message.data['sourceId']?.toString() ??
+            message.data['source_id']?.toString(),
+        'categoryId': message.data['categoryId']?.toString() ??
+            message.data['category_id']?.toString(),
       });
       AppNavigation.handleNotificationPayload(payload);
     });
 
-    FirebaseMessaging.instance.getInitialMessage().then((message) {
+    FirebaseMessaging.instance.getInitialMessage().then((message) async {
       if (message == null) return;
       final payload = jsonEncode({
         'title': message.notification?.title ??
@@ -170,8 +194,25 @@ class FcmService {
             'New article available',
         'url': message.data['url']?.toString(),
         'imageUrl': message.data['imageUrl']?.toString(),
+        'sourceId': message.data['sourceId']?.toString() ??
+            message.data['source_id']?.toString(),
+        'categoryId': message.data['categoryId']?.toString() ??
+            message.data['category_id']?.toString(),
       });
       AppNavigation.handleNotificationPayload(payload);
     });
+  }
+
+  /// Update the app badge (no-op fallback).
+  /// Setting the system app icon badge reliably requires a dedicated package
+  /// (e.g., flutter_app_badger) or native platform code. For now this logs
+  /// the unread count so behavior is predictable and compilation succeeds.
+  Future<void> updateBadgeCount() async {
+    try {
+      final unread = await _notificationStore.getUnreadCount();
+      debugPrint('Unread notifications: $unread');
+    } catch (e) {
+      debugPrint('Failed to compute unread count: $e');
+    }
   }
 }

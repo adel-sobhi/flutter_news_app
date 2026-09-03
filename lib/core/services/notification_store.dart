@@ -20,7 +20,7 @@ class NotificationStore {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE $_tableName (
@@ -29,10 +29,26 @@ class NotificationStore {
             body TEXT NOT NULL,
             url TEXT,
             imageUrl TEXT,
+            sourceId TEXT,
+            categoryId TEXT,
             isRead INTEGER NOT NULL DEFAULT 0,
             createdAt TEXT NOT NULL
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          final columns = await db.rawQuery('PRAGMA table_info($_tableName)');
+          final columnNames = columns.map((c) => c['name'] as String).toSet();
+          if (!columnNames.contains('sourceId')) {
+            await db
+                .execute('ALTER TABLE $_tableName ADD COLUMN sourceId TEXT');
+          }
+          if (!columnNames.contains('categoryId')) {
+            await db
+                .execute('ALTER TABLE $_tableName ADD COLUMN categoryId TEXT');
+          }
+        }
       },
     );
   }
@@ -81,6 +97,8 @@ class NotificationStore {
         'body': notification.body,
         'url': notification.url,
         'imageUrl': notification.imageUrl,
+        'sourceId': notification.sourceId,
+        'categoryId': notification.categoryId,
         'isRead': notification.isRead ? 1 : 0,
         'createdAt': notification.createdAt.toIso8601String(),
       },
@@ -95,6 +113,15 @@ class NotificationStore {
       {'isRead': 1},
       where: 'id = ?',
       whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteReadNotifications() async {
+    final db = await database;
+    await db.delete(
+      _tableName,
+      where: 'isRead = ?',
+      whereArgs: [1],
     );
   }
 

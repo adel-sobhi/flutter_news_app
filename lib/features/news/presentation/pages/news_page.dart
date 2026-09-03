@@ -12,8 +12,15 @@ import '../../../sources/presentation/pages/source_horizontal_list.dart';
 
 class NewsPage extends StatefulWidget {
   final String categoryId;
+  final String? initialArticleUrl;
+  final String? initialSourceId;
 
-  const NewsPage({super.key, this.categoryId = 'general'});
+  const NewsPage({
+    super.key,
+    this.categoryId = 'general',
+    this.initialArticleUrl,
+    this.initialSourceId,
+  });
 
   @override
   State<NewsPage> createState() => _NewsPageState();
@@ -22,10 +29,14 @@ class NewsPage extends StatefulWidget {
 class _NewsPageState extends State<NewsPage> {
   String? selectedSourceId;
 
+  final GlobalKey<NewsListSectionState> _newsListKey =
+      GlobalKey<NewsListSectionState>();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<SourcesCubit>().getSources(widget.categoryId);
     });
   }
@@ -35,6 +46,14 @@ class _NewsPageState extends State<NewsPage> {
     if (selectedSourceId != sourceId) {
       setState(() => selectedSourceId = sourceId);
       context.read<NewsCubit>().getNews(sourceId);
+    }
+
+    if (widget.initialArticleUrl != null &&
+        widget.initialArticleUrl!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _newsListKey.currentState?.openArticleByUrl(widget.initialArticleUrl);
+      });
     }
   }
 
@@ -89,7 +108,33 @@ class _NewsPageState extends State<NewsPage> {
             if (selectedSourceId == null) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!mounted) return;
-                selectSource(0, sourcesList[sourcesState.selectedIndex].id ?? '');
+
+                final targetId = widget.initialSourceId != null &&
+                        sourcesList.any((source) =>
+                            (source.id ?? '') == widget.initialSourceId)
+                    ? widget.initialSourceId!
+                    : sourcesList[sourcesState.selectedIndex].id ?? '';
+
+                final targetIndex = sourcesList.indexWhere(
+                  (source) => (source.id ?? '') == targetId,
+                );
+
+                if (targetIndex >= 0) {
+                  selectSource(targetIndex, targetId);
+                } else if (sourcesList.isNotEmpty) {
+                  selectSource(0, sourcesList[0].id ?? '');
+                }
+              });
+            }
+
+            // If this was opened from a notification, open the exact matching article after the
+            // source list is ready.
+            if (widget.initialArticleUrl != null &&
+                widget.initialArticleUrl!.isNotEmpty) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                _newsListKey.currentState
+                    ?.openArticleByUrl(widget.initialArticleUrl);
               });
             }
             return Column(
@@ -103,7 +148,8 @@ class _NewsPageState extends State<NewsPage> {
                 Expanded(
                   child: selectedSourceId == null
                       ? const SizedBox()
-                      : NewsListSection(sourceId: selectedSourceId!),
+                      : NewsListSection(
+                          key: _newsListKey, sourceId: selectedSourceId!),
                 ),
               ],
             );

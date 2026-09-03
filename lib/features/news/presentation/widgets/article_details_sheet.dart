@@ -25,7 +25,6 @@ class ArticleDetailsSheet {
       return 'Over a week';
     }
   }
-
   static void show(BuildContext context, NewsEntity article) {
     showModalBottomSheet(
       context: context,

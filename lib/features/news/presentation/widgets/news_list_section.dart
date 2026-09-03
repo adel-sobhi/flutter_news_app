@@ -4,8 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/app_color.dart';
 import '../../../../core/utils/app_styles.dart';
 import '../../../../core/widgets/app_loading_indicator.dart';
+import '../../domain/entities/news_response_entities.dart';
 import '../cubit/news_cubit.dart';
 import '../cubit/news_state.dart';
+import 'article_details_sheet.dart';
 import 'error_retry_view.dart';
 import 'news_item_card.dart';
 
@@ -15,11 +17,37 @@ class NewsListSection extends StatefulWidget {
   const NewsListSection({super.key, required this.sourceId});
 
   @override
-  State<NewsListSection> createState() => _NewsListSectionState();
+  NewsListSectionState createState() => NewsListSectionState();
 }
 
-class _NewsListSectionState extends State<NewsListSection> {
+class NewsListSectionState extends State<NewsListSection> {
   final ScrollController scrollController = ScrollController();
+  String? _pendingArticleUrl;
+
+  /// Request the list to open the article with [url]. If articles are not loaded yet,
+  /// the URL will be stored and opened once loading finishes.
+  void openArticleByUrl(String? url) {
+    if (url == null || url.isEmpty) return;
+    _pendingArticleUrl = url;
+
+    // Try immediately if data already available
+    final state = context.read<NewsCubit>().state;
+    if (state is NewsSuccess) {
+      NewsEntity? found;
+      for (final a in state.articles) {
+        if ((a.url ?? '') == url) {
+          found = a;
+          break;
+        }
+      }
+      if (found != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ArticleDetailsSheet.show(context, found!);
+        });
+        _pendingArticleUrl = null;
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -64,6 +92,21 @@ class _NewsListSectionState extends State<NewsListSection> {
 
         if (state is NewsSuccess) {
           final articles = state.articles;
+
+          // If a pending URL was requested earlier, try to open it now
+          if ((_pendingArticleUrl ?? '').isNotEmpty) {
+            final pendingUrl = _pendingArticleUrl!;
+            final found = articles.firstWhere(
+              (a) => (a.url ?? '') == pendingUrl,
+              orElse: () => NewsEntity(),
+            );
+            if ((found.url ?? '').isNotEmpty) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                ArticleDetailsSheet.show(context, found);
+              });
+              _pendingArticleUrl = null;
+            }
+          }
 
           if (articles.isEmpty) {
             return Center(

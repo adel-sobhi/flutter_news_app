@@ -4,6 +4,8 @@ class NotificationEntity {
   final String body;
   final String? url;
   final String? imageUrl;
+  final String? sourceId;
+  final String? categoryId;
   final bool isRead;
   final DateTime createdAt;
 
@@ -13,6 +15,8 @@ class NotificationEntity {
     required this.body,
     this.url,
     this.imageUrl,
+    this.sourceId,
+    this.categoryId,
     this.isRead = false,
     required this.createdAt,
   });
@@ -26,6 +30,9 @@ class NotificationEntity {
       body: json['body']?.toString() ?? '',
       url: json['url']?.toString(),
       imageUrl: json['imageUrl']?.toString(),
+      sourceId: json['sourceId']?.toString() ?? json['source_id']?.toString(),
+      categoryId:
+          json['categoryId']?.toString() ?? json['category_id']?.toString(),
       isRead: isReadValue == true || isReadValue == 1,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
     );
@@ -38,6 +45,8 @@ class NotificationEntity {
       'body': body,
       'url': url,
       'imageUrl': imageUrl,
+      'sourceId': sourceId,
+      'categoryId': categoryId,
       'isRead': isRead,
       'createdAt': createdAt.toIso8601String(),
     };

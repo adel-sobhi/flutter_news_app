@@ -127,9 +127,11 @@ class FcmService {
       final unreadCount = await _notificationStore.getUnreadCount();
 
       final payload = jsonEncode({
-        'title': notification.title ?? message.data['title'] ?? 'Breaking News',
-        'body': notification.body ??
-            message.data['body'] ??
+        'title': message.data['title']?.toString() ??
+            notification.title ??
+            'Breaking News',
+        'body': message.data['body']?.toString() ??
+            notification.body ??
             'New article available',
         'url': message.data['url']?.toString(),
         'imageUrl': message.data['imageUrl']?.toString(),
@@ -137,6 +139,10 @@ class FcmService {
             message.data['source_id']?.toString(),
         'categoryId': message.data['categoryId']?.toString() ??
             message.data['category_id']?.toString(),
+        'author': message.data['author']?.toString(),
+        'publishedAt': message.data['publishedAt']?.toString(),
+        'description': message.data['description']?.toString(),
+        'content': message.data['content']?.toString(),
       });
 
       await localNotifications.show(
@@ -167,11 +173,11 @@ class FcmService {
   void listenToNotificationTaps() {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       final payload = jsonEncode({
-        'title': message.notification?.title ??
-            message.data['title'] ??
+        'title': message.data['title']?.toString() ??
+            message.notification?.title ??
             'Breaking News',
-        'body': message.notification?.body ??
-            message.data['body'] ??
+        'body': message.data['body']?.toString() ??
+            message.notification?.body ??
             'New article available',
         'url': message.data['url']?.toString(),
         'imageUrl': message.data['imageUrl']?.toString(),
@@ -179,6 +185,10 @@ class FcmService {
             message.data['source_id']?.toString(),
         'categoryId': message.data['categoryId']?.toString() ??
             message.data['category_id']?.toString(),
+        'author': message.data['author']?.toString(),
+        'publishedAt': message.data['publishedAt']?.toString(),
+        'description': message.data['description']?.toString(),
+        'content': message.data['content']?.toString(),
       });
       AppNavigation.handleNotificationPayload(payload);
     });
@@ -186,11 +196,11 @@ class FcmService {
     FirebaseMessaging.instance.getInitialMessage().then((message) async {
       if (message == null) return;
       final payload = jsonEncode({
-        'title': message.notification?.title ??
-            message.data['title'] ??
+        'title': message.data['title']?.toString() ??
+            message.notification?.title ??
             'Breaking News',
-        'body': message.notification?.body ??
-            message.data['body'] ??
+        'body': message.data['body']?.toString() ??
+            message.notification?.body ??
             'New article available',
         'url': message.data['url']?.toString(),
         'imageUrl': message.data['imageUrl']?.toString(),
@@ -198,6 +208,10 @@ class FcmService {
             message.data['source_id']?.toString(),
         'categoryId': message.data['categoryId']?.toString() ??
             message.data['category_id']?.toString(),
+        'author': message.data['author']?.toString(),
+        'publishedAt': message.data['publishedAt']?.toString(),
+        'description': message.data['description']?.toString(),
+        'content': message.data['content']?.toString(),
       });
       AppNavigation.handleNotificationPayload(payload);
     });

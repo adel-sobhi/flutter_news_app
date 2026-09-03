@@ -39,11 +39,15 @@ async function checkNews() {
 
         const payload = JSON.stringify({
           title: latestTitle,
-          body: latestTitle,
+          body: latestArticle.description || latestTitle,
           url: latestUrl,
           imageUrl: latestArticle.urlToImage || '',
           sourceId,
           categoryId: 'general',
+          author: latestArticle.author || '',
+          publishedAt: latestArticle.publishedAt || '',
+          description: latestArticle.description || '',
+          content: latestArticle.content || latestArticle.description || latestTitle,
         });
 
         // Save the full article into Firestore (latest_articles/{sourceId}) before sending the notification
@@ -59,7 +63,7 @@ async function checkNews() {
               id: latestArticle.source && latestArticle.source.id ? latestArticle.source.id : null,
               name: latestArticle.source && latestArticle.source.name ? latestArticle.source.name : null,
             },
-            content: latestArticle.content || '',
+            content: latestArticle.content || latestArticle.description || '',
             updated_at: admin.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
           console.log('Saved latest article to Firestore for source:', sourceId);
@@ -70,17 +74,21 @@ async function checkNews() {
 
         const message = {
           notification: {
-            title: "Breaking News",
-            body: latestTitle,
+            title: latestTitle,
+            body: latestArticle.description || latestTitle,
           },
           data: {
             type: 'news',
             title: latestTitle,
-            body: latestTitle,
+            body: latestArticle.description || latestTitle,
             url: latestUrl,
             imageUrl: latestArticle.urlToImage || '',
             sourceId,
             categoryId: 'general',
+            author: latestArticle.author || '',
+            publishedAt: latestArticle.publishedAt || '',
+            description: latestArticle.description || '',
+            content: latestArticle.content || latestArticle.description || latestTitle,
             payload,
           },
           topic: "all_users"

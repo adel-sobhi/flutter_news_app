@@ -15,8 +15,25 @@ import 'news_item_card.dart';
 
 class NewsListSection extends StatefulWidget {
   final String sourceId;
+  final String? initialTitle;
+  final String? initialBody;
+  final String? initialImageUrl;
+  final String? initialAuthor;
+  final String? initialPublishedAt;
+  final String? initialDescription;
+  final String? initialContent;
 
-  const NewsListSection({super.key, required this.sourceId});
+  const NewsListSection({
+    super.key,
+    required this.sourceId,
+    this.initialTitle,
+    this.initialBody,
+    this.initialImageUrl,
+    this.initialAuthor,
+    this.initialPublishedAt,
+    this.initialDescription,
+    this.initialContent,
+  });
 
   @override
   NewsListSectionState createState() => NewsListSectionState();
@@ -106,7 +123,31 @@ class NewsListSectionState extends State<NewsListSection> {
           ArticleDetailsSheet.show(context, found!);
         });
         _pendingArticleUrl = null;
+        return;
       }
+
+      // Final fallback: never open another news card if we failed to match the exact URL.
+      final fallback = NewsEntity(
+        title: widget.initialTitle ?? 'News',
+        description: widget.initialDescription ??
+            widget.initialBody ??
+            widget.initialTitle ??
+            'News details',
+        url: url,
+        urlToImage: widget.initialImageUrl,
+        publishedAt:
+            widget.initialPublishedAt ?? DateTime.now().toIso8601String(),
+        content: widget.initialContent ??
+            widget.initialBody ??
+            widget.initialTitle ??
+            'News details',
+        author: widget.initialAuthor,
+      );
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ArticleDetailsSheet.show(context, fallback);
+      });
+      _pendingArticleUrl = null;
     }
   }
 
@@ -124,50 +165,95 @@ class NewsListSectionState extends State<NewsListSection> {
   }
 
   Future<void> _tryShowFromFirestore(String pendingUrl) async {
-    if ((_pendingArticleUrl ?? '').isEmpty || _pendingArticleUrl != pendingUrl)
+    if ((_pendingArticleUrl ?? '').isEmpty ||
+        _pendingArticleUrl != pendingUrl) {
       return;
+    }
     try {
       final doc = await FirebaseFirestore.instance
           .collection('latest_articles')
           .doc(widget.sourceId)
           .get();
-      if (!doc.exists) return;
-      final data = doc.data();
-      if (data == null) return;
-      final candidateUrl = data['url']?.toString();
-      if (candidateUrl == null || !_urlsMatch(candidateUrl, pendingUrl)) return;
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null) {
+          final candidateUrl = data['url']?.toString();
+          if (candidateUrl != null && _urlsMatch(candidateUrl, pendingUrl)) {
+            final sourceMap = data['source'] as Map<String, dynamic>?;
+            final sourceEntity = sourceMap != null
+                ? SourcesEntity(
+                    id: sourceMap['id']?.toString(),
+                    name: sourceMap['name']?.toString())
+                : null;
 
-      final sourceMap = data['source'] as Map<String, dynamic>?;
-      final sourceEntity = sourceMap != null
-          ? SourcesEntity(
-              id: sourceMap['id']?.toString(),
-              name: sourceMap['name']?.toString())
-          : null;
+            final found = NewsEntity(
+              title: data['title']?.toString(),
+              description: data['description']?.toString(),
+              url: candidateUrl,
+              urlToImage: data['urlToImage']?.toString(),
+              publishedAt: data['publishedAt']?.toString(),
+              author: data['author']?.toString(),
+              source: sourceEntity,
+              content: data['content']?.toString(),
+            );
 
-      final found = NewsEntity(
-        title: data['title']?.toString(),
-        description: data['description']?.toString(),
-        url: candidateUrl,
-        urlToImage: data['urlToImage']?.toString(),
-        publishedAt: data['publishedAt']?.toString(),
-        author: data['author']?.toString(),
-        source: sourceEntity,
-        content: data['content']?.toString(),
-      );
+            if (scrollController.hasClients) {
+              final maxScroll = scrollController.position.maxScrollExtent;
+              final target = (0.0).clamp(0.0, maxScroll);
+              scrollController.animateTo(target,
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut);
+            }
 
-      if (scrollController.hasClients) {
-        final maxScroll = scrollController.position.maxScrollExtent;
-        final target = (0.0).clamp(0.0, maxScroll);
-        scrollController.animateTo(target,
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeInOut);
+            if (!mounted) return;
+            ArticleDetailsSheet.show(context, found);
+            _pendingArticleUrl = null;
+            return;
+          }
+        }
       }
 
+      final fallback = NewsEntity(
+        title: widget.initialTitle ?? 'News',
+        description: widget.initialDescription ??
+            widget.initialBody ??
+            widget.initialTitle ??
+            'News details',
+        url: pendingUrl,
+        urlToImage: widget.initialImageUrl,
+        publishedAt:
+            widget.initialPublishedAt ?? DateTime.now().toIso8601String(),
+        content: widget.initialContent ??
+            widget.initialBody ??
+            widget.initialTitle ??
+            'News details',
+        author: widget.initialAuthor,
+      );
+
       if (!mounted) return;
-      ArticleDetailsSheet.show(context, found);
+      ArticleDetailsSheet.show(context, fallback);
       _pendingArticleUrl = null;
     } catch (_) {
-      // ignore
+      final fallback = NewsEntity(
+        title: widget.initialTitle ?? 'News',
+        description: widget.initialDescription ??
+            widget.initialBody ??
+            widget.initialTitle ??
+            'News details',
+        url: pendingUrl,
+        urlToImage: widget.initialImageUrl,
+        publishedAt:
+            widget.initialPublishedAt ?? DateTime.now().toIso8601String(),
+        content: widget.initialContent ??
+            widget.initialBody ??
+            widget.initialTitle ??
+            'News details',
+        author: widget.initialAuthor,
+      );
+
+      if (!mounted) return;
+      ArticleDetailsSheet.show(context, fallback);
+      _pendingArticleUrl = null;
     }
   }
 

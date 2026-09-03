@@ -1,25 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/utils/app_color.dart';
 import '../../../../core/widgets/app_loading_indicator.dart';
 import '../../../sources/presentation/cubit/sources_cubit.dart';
 import '../../../sources/presentation/cubit/sources_state.dart';
+import '../../../sources/presentation/pages/source_horizontal_list.dart';
 import '../cubit/news_cubit.dart';
 import '../widgets/error_retry_view.dart';
 import '../widgets/news_list_section.dart';
-import '../../../sources/presentation/pages/source_horizontal_list.dart';
 
 
 class NewsPage extends StatefulWidget {
   final String categoryId;
   final String? initialArticleUrl;
   final String? initialSourceId;
+  final String? initialTitle;
+  final String? initialBody;
+  final String? initialImageUrl;
+  final String? initialAuthor;
+  final String? initialPublishedAt;
+  final String? initialDescription;
+  final String? initialContent;
 
   const NewsPage({
     super.key,
     this.categoryId = 'general',
     this.initialArticleUrl,
     this.initialSourceId,
+    this.initialTitle,
+    this.initialBody,
+    this.initialImageUrl,
+    this.initialAuthor,
+    this.initialPublishedAt,
+    this.initialDescription,
+    this.initialContent,
   });
 
   @override
@@ -149,7 +164,16 @@ class _NewsPageState extends State<NewsPage> {
                   child: selectedSourceId == null
                       ? const SizedBox()
                       : NewsListSection(
-                          key: _newsListKey, sourceId: selectedSourceId!),
+                          key: _newsListKey,
+                          sourceId: selectedSourceId!,
+                          initialTitle: widget.initialTitle,
+                          initialBody: widget.initialBody,
+                          initialImageUrl: widget.initialImageUrl,
+                          initialAuthor: widget.initialAuthor,
+                          initialPublishedAt: widget.initialPublishedAt,
+                          initialDescription: widget.initialDescription,
+                          initialContent: widget.initialContent,
+                        ),
                 ),
               ],
             );

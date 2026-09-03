@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../../features/news/domain/entities/news_response_entities.dart';
-import '../../features/news/presentation/widgets/article_details_sheet.dart';
 import '../../features/news/presentation/pages/news_page.dart';
+import '../../features/news/presentation/widgets/article_details_sheet.dart';
 
 class AppNavigation {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -16,6 +16,10 @@ class AppNavigation {
     String? imageUrl, {
     String? sourceId,
     String? categoryId,
+    String? author,
+    String? publishedAt,
+    String? description,
+    String? content,
   }) {
     if (title == null && body == null && (url == null || url.isEmpty)) {
       return;
@@ -32,6 +36,13 @@ class AppNavigation {
           categoryId: categoryId ?? 'general',
           initialSourceId: sourceId,
           initialArticleUrl: url,
+          initialTitle: title ?? body,
+          initialBody: body ?? title,
+          initialImageUrl: imageUrl,
+          initialAuthor: author,
+          initialPublishedAt: publishedAt,
+          initialDescription: description,
+          initialContent: content,
         ),
       );
 
@@ -45,11 +56,12 @@ class AppNavigation {
 
     final article = NewsEntity(
       title: title ?? body ?? 'News',
-      description: body ?? title ?? 'News details',
+      description: description ?? body ?? title ?? 'News details',
       url: url,
       urlToImage: imageUrl,
-      publishedAt: DateTime.now().toIso8601String(),
-      content: body ?? title,
+      publishedAt: publishedAt ?? DateTime.now().toIso8601String(),
+      content: content ?? body ?? title ?? 'News details',
+      author: author,
     );
 
     ArticleDetailsSheet.show(context, article);
@@ -75,6 +87,10 @@ class AppNavigation {
           decoded['imageUrl']?.toString(),
           sourceId: sourceId,
           categoryId: categoryId,
+          author: decoded['author']?.toString(),
+          publishedAt: decoded['publishedAt']?.toString(),
+          description: decoded['description']?.toString(),
+          content: decoded['content']?.toString(),
         );
         return;
       }

@@ -23,6 +23,18 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   Future<int> _getUnreadCount() => _notificationStore.getUnreadCount();
 
+  Stream<int> get _unreadCountStream => _notificationStore.unreadCountStream;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _notificationStore.notifyUnreadCountChanged();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<CategoryModel> categories = CategoryModel.getCategoriesList();
@@ -50,8 +62,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             ),
             centerTitle: true,
             actions: [
-              FutureBuilder<int>(
-                future: _getUnreadCount(),
+              StreamBuilder<int>(
+                stream: NotificationStore().unreadCountStream,
+                initialData: 0,
                 builder: (context, snapshot) {
                   final count = snapshot.data ?? 0;
                   return Stack(

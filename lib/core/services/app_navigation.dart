@@ -9,6 +9,19 @@ import 'notification_store.dart';
 
 class AppNavigation {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static final Set<String> _handledNotificationKeys = <String>{};
+
+  static String _notificationKeyFromPayload(Map<String, dynamic> decoded) {
+    final id = decoded['id']?.toString();
+    if (id != null && id.isNotEmpty) return 'id:$id';
+
+    final url = decoded['url']?.toString();
+    if (url != null && url.isNotEmpty) return 'url:$url';
+
+    final title = decoded['title']?.toString() ?? 'notification';
+    final body = decoded['body']?.toString() ?? '';
+    return 'fallback:${title}_$body';
+  }
 
   static void goToArticle(
     String? title,
@@ -81,9 +94,22 @@ class AppNavigation {
       return;
     }
 
+    final dedupeKey = payload.trim();
+    final fallbackKey = Uri.tryParse(dedupeKey)?.toString() ?? dedupeKey;
+    if (_handledNotificationKeys.contains(fallbackKey)) {
+      return;
+    }
+    _handledNotificationKeys.add(fallbackKey);
+
     try {
       final decoded = jsonDecode(payload);
       if (decoded is Map<String, dynamic>) {
+        final key = _notificationKeyFromPayload(decoded);
+        if (_handledNotificationKeys.contains(key)) {
+          return;
+        }
+        _handledNotificationKeys.add(key);
+
         final sourceId =
             decoded['sourceId']?.toString() ?? decoded['source_id']?.toString();
         final categoryId = decoded['categoryId']?.toString() ??

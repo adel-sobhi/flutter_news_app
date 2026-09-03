@@ -1,29 +1,39 @@
+import 'dart:async';
+
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../features/notifications/domain/entities/notification_entity.dart';
 
 class NotificationStore {
-  static const String _databaseName = 'notifications.db';
-  static const String _tableName = 'notifications';
+  static const String databaseName = 'notifications.db';
+  static const String tableName = 'notifications';
 
   static Database? _database;
+  static final StreamController<int> _unreadCountController =
+      StreamController<int>.broadcast();
+
+  Stream<int> get unreadCountStream => _unreadCountController.stream;
+
+  void notifyUnreadCountChanged() {
+    getUnreadCount().then((count) => _unreadCountController.add(count));
+  }
 
   Future<Database> get database async {
-    _database ??= await _initDb();
+    _database ??= await initDb();
     return _database!;
   }
 
-  Future<Database> _initDb() async {
+  Future<Database> initDb() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, _databaseName);
+    final path = join(dbPath, databaseName);
 
     return openDatabase(
       path,
-      version: 3,
+      version: 1,
       onCreate: (db, version) async {
         await db.execute('''
-          CREATE TABLE $_tableName (
+          CREATE TABLE $tableName (
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
             body TEXT NOT NULL,
@@ -40,42 +50,13 @@ class NotificationStore {
           )
         ''');
       },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          final columns = await db.rawQuery('PRAGMA table_info($_tableName)');
-          final columnNames = columns.map((c) => c['name'] as String).toSet();
-          if (!columnNames.contains('sourceId')) {
-            await db
-                .execute('ALTER TABLE $_tableName ADD COLUMN sourceId TEXT');
-          }
-          if (!columnNames.contains('categoryId')) {
-            await db
-                .execute('ALTER TABLE $_tableName ADD COLUMN categoryId TEXT');
-          }
-        }
-        if (oldVersion < 3) {
-          final columns = await db.rawQuery('PRAGMA table_info($_tableName)');
-          final columnNames = columns.map((c) => c['name'] as String).toSet();
-          for (final column in [
-            'author',
-            'publishedAt',
-            'description',
-            'content'
-          ]) {
-            if (!columnNames.contains(column)) {
-              await db
-                  .execute('ALTER TABLE $_tableName ADD COLUMN $column TEXT');
-            }
-          }
-        }
-      },
     );
   }
 
   Future<List<NotificationEntity>> getNotifications() async {
     final db = await database;
     final rows = await db.query(
-      _tableName,
+      tableName,
       orderBy: 'createdAt DESC',
     );
 
@@ -98,7 +79,7 @@ class NotificationStore {
   Future<void> addNotification(NotificationEntity notification) async {
     final db = await database;
     final existing = await db.query(
-      _tableName,
+      tableName,
       where: 'id = ?',
       whereArgs: [notification.id],
       limit: 1,
@@ -109,7 +90,7 @@ class NotificationStore {
     }
 
     await db.insert(
-      _tableName,
+      tableName,
       {
         'id': notification.id,
         'title': notification.title,
@@ -127,29 +108,33 @@ class NotificationStore {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    notifyUnreadCountChanged();
   }
 
   Future<void> markAsRead(String id) async {
     final db = await database;
     await db.update(
-      _tableName,
+      tableName,
       {'isRead': 1},
       where: 'id = ?',
       whereArgs: [id],
     );
+    notifyUnreadCountChanged();
   }
 
   Future<void> deleteReadNotifications() async {
     final db = await database;
     await db.delete(
-      _tableName,
+      tableName,
       where: 'isRead = ?',
       whereArgs: [1],
     );
+    notifyUnreadCountChanged();
   }
 
   Future<void> clear() async {
     final db = await database;
-    await db.delete(_tableName);
+    await db.delete(tableName);
+    notifyUnreadCountChanged();
   }
 }

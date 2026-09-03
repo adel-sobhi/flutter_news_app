@@ -33,7 +33,8 @@ async function checkNews() {
       if (savedTitle !== latestTitle) {
         console.log("New news found: " + latestTitle);
 
-        const sourceId = latestArticle.source && latestArticle.source.id
+        const sourceId = latestArticle.source &&
+        latestArticle.source.id
           ? latestArticle.source.id
           : 'reuters';
 
@@ -50,27 +51,25 @@ async function checkNews() {
           content: latestArticle.content || latestArticle.description || latestTitle,
         });
 
-        // Save the full article into Firestore (latest_articles/{sourceId}) before sending the notification
-        try {
-          await db.collection('latest_articles').doc(sourceId).set({
-            title: latestArticle.title || '',
-            description: latestArticle.description || '',
-            url: latestUrl,
-            urlToImage: latestArticle.urlToImage || '',
-            author: latestArticle.author || '',
-            publishedAt: latestArticle.publishedAt || '',
-            source: {
-              id: latestArticle.source && latestArticle.source.id ? latestArticle.source.id : null,
-              name: latestArticle.source && latestArticle.source.name ? latestArticle.source.name : null,
-            },
-            content: latestArticle.content || latestArticle.description || '',
-            updated_at: admin.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-          console.log('Saved latest article to Firestore for source:', sourceId);
-        } catch (e) {
-          console.error('Failed to save latest article to Firestore:', e);
-          // continue — we still want to send the push notification
-        }
+            try {
+              await db.collection('latest_articles').doc(sourceId).set({
+                title: latestArticle.title || '',
+                description: latestArticle.description || '',
+                url: latestUrl,
+                urlToImage: latestArticle.urlToImage || '',
+                author: latestArticle.author || '',
+                publishedAt: latestArticle.publishedAt || '',
+                source: {
+                  id: latestArticle.source && latestArticle.source.id ? latestArticle.source.id : null,
+                  name: latestArticle.source && latestArticle.source.name ? latestArticle.source.name : null,
+                },
+                content: latestArticle.content || latestArticle.description || '',
+                updated_at: admin.firestore.FieldValue.serverTimestamp()
+              }, { merge: true });
+              console.log('Saved latest article to Firestore for source:', sourceId);
+            } catch (e) {
+              console.error('Failed to save latest article to Firestore:', e);
+            }
 
         const message = {
           notification: {

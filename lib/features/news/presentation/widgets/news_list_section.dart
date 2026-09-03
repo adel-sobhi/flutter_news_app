@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../sources/domain/entities/sources_response_entities.dart';
 import '../../../../core/utils/app_color.dart';
 import '../../../../core/utils/app_styles.dart';
 import '../../../../core/widgets/app_loading_indicator.dart';
@@ -26,7 +28,19 @@ class NewsListSectionState extends State<NewsListSection> {
 
   /// Request the list to open the article with [url]. If articles are not loaded yet,
   /// the URL will be stored and opened once loading finishes.
-  void openArticleByUrl(String? url) {
+  bool _urlsMatch(String? a, String b) {
+    if (a == null || a.isEmpty) return false;
+    try {
+      final ua = Uri.parse(a);
+      final ub = Uri.parse(b);
+      // Match by scheme, host and path to avoid differences in query params/order
+      return ua.scheme == ub.scheme && ua.host == ub.host && ua.path == ub.path;
+    } catch (_) {
+      return a == b || a.contains(b) || b.contains(a);
+    }
+  }
+
+  Future<void> openArticleByUrl(String? url) async {
     if (url == null || url.isEmpty) return;
     _pendingArticleUrl = url;
 
@@ -34,13 +48,60 @@ class NewsListSectionState extends State<NewsListSection> {
     final state = context.read<NewsCubit>().state;
     if (state is NewsSuccess) {
       NewsEntity? found;
-      for (final a in state.articles) {
-        if ((a.url ?? '') == url) {
-          found = a;
-          break;
+      final articles = state.articles;
+      final idx = articles.indexWhere((a) => _urlsMatch(a.url, url));
+      if (idx != -1) {
+        found = articles[idx];
+      } else {
+        // Not found locally — try Firestore fallback
+        try {
+          final doc = await FirebaseFirestore.instance
+              .collection('latest_articles')
+              .doc(widget.sourceId)
+              .get();
+          if (doc.exists) {
+            final data = doc.data();
+            if (data != null) {
+              final sourceMap = data['source'] as Map<String, dynamic>?;
+              final sourceEntity = sourceMap != null
+                  ? SourcesEntity(
+                      id: sourceMap['id']?.toString(),
+                      name: sourceMap['name']?.toString())
+                  : null;
+
+              final candidateUrl = data['url']?.toString();
+              if (candidateUrl != null && _urlsMatch(candidateUrl, url)) {
+                found = NewsEntity(
+                  title: data['title']?.toString(),
+                  description: data['description']?.toString(),
+                  url: candidateUrl,
+                  urlToImage: data['urlToImage']?.toString(),
+                  publishedAt: data['publishedAt']?.toString(),
+                  author: data['author']?.toString(),
+                  source: sourceEntity,
+                  content: data['content']?.toString(),
+                );
+              }
+            }
+          }
+        } catch (_) {
+          // ignore firestore read failures
         }
       }
+
       if (found != null) {
+        // Scroll the list so the target item becomes visible (approximate by index)
+        if (scrollController.hasClients) {
+          final itemHeightEstimate = 160.0; // estimated card height
+          final maxScroll = scrollController.position.maxScrollExtent;
+          final targetIndex = idx != -1 ? idx : 0;
+          final target =
+              (targetIndex * itemHeightEstimate).clamp(0.0, maxScroll);
+          scrollController.animateTo(target,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut);
+        }
+
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ArticleDetailsSheet.show(context, found!);
         });
@@ -60,6 +121,54 @@ class NewsListSectionState extends State<NewsListSection> {
     scrollController.removeListener(onScroll);
     scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _tryShowFromFirestore(String pendingUrl) async {
+    if ((_pendingArticleUrl ?? '').isEmpty || _pendingArticleUrl != pendingUrl)
+      return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('latest_articles')
+          .doc(widget.sourceId)
+          .get();
+      if (!doc.exists) return;
+      final data = doc.data();
+      if (data == null) return;
+      final candidateUrl = data['url']?.toString();
+      if (candidateUrl == null || !_urlsMatch(candidateUrl, pendingUrl)) return;
+
+      final sourceMap = data['source'] as Map<String, dynamic>?;
+      final sourceEntity = sourceMap != null
+          ? SourcesEntity(
+              id: sourceMap['id']?.toString(),
+              name: sourceMap['name']?.toString())
+          : null;
+
+      final found = NewsEntity(
+        title: data['title']?.toString(),
+        description: data['description']?.toString(),
+        url: candidateUrl,
+        urlToImage: data['urlToImage']?.toString(),
+        publishedAt: data['publishedAt']?.toString(),
+        author: data['author']?.toString(),
+        source: sourceEntity,
+        content: data['content']?.toString(),
+      );
+
+      if (scrollController.hasClients) {
+        final maxScroll = scrollController.position.maxScrollExtent;
+        final target = (0.0).clamp(0.0, maxScroll);
+        scrollController.animateTo(target,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut);
+      }
+
+      if (!mounted) return;
+      ArticleDetailsSheet.show(context, found);
+      _pendingArticleUrl = null;
+    } catch (_) {
+      // ignore
+    }
   }
 
   void onScroll() {
@@ -96,15 +205,30 @@ class NewsListSectionState extends State<NewsListSection> {
           // If a pending URL was requested earlier, try to open it now
           if ((_pendingArticleUrl ?? '').isNotEmpty) {
             final pendingUrl = _pendingArticleUrl!;
-            final found = articles.firstWhere(
-              (a) => (a.url ?? '') == pendingUrl,
-              orElse: () => NewsEntity(),
-            );
-            if ((found.url ?? '').isNotEmpty) {
+            final idx =
+                articles.indexWhere((a) => _urlsMatch(a.url, pendingUrl));
+            if (idx != -1) {
+              final found = articles[idx];
+
+              // Scroll approximate position before showing details
+              if (scrollController.hasClients) {
+                final itemHeightEstimate = 160.0;
+                final maxScroll = scrollController.position.maxScrollExtent;
+                final target = (idx * itemHeightEstimate).clamp(0.0, maxScroll);
+                scrollController.animateTo(target,
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeInOut);
+              }
+
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 ArticleDetailsSheet.show(context, found);
               });
               _pendingArticleUrl = null;
+            } else {
+              // Try Firestore fallback if not found locally (run after frame)
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _tryShowFromFirestore(pendingUrl);
+              });
             }
           }
 

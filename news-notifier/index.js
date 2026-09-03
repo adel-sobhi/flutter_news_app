@@ -33,11 +33,17 @@ async function checkNews() {
       if (savedTitle !== latestTitle) {
         console.log("New news found: " + latestTitle);
 
+        const sourceId = latestArticle.source && latestArticle.source.id
+          ? latestArticle.source.id
+          : 'reuters';
+
         const payload = JSON.stringify({
           title: latestTitle,
           body: latestTitle,
           url: latestUrl,
           imageUrl: latestArticle.urlToImage || '',
+          sourceId,
+          categoryId: 'general',
         });
 
         const message = {
@@ -51,6 +57,8 @@ async function checkNews() {
             body: latestTitle,
             url: latestUrl,
             imageUrl: latestArticle.urlToImage || '',
+            sourceId,
+            categoryId: 'general',
             payload,
           },
           topic: "all_users"

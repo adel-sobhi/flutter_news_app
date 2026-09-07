@@ -50,6 +50,19 @@ import '../../features/news/data/repositories/news_repository_impl.dart'
 import '../../features/news/domain/repositories/news_repository.dart' as _i258;
 import '../../features/news/domain/usecases/get_news_use_case.dart' as _i147;
 import '../../features/news/presentation/cubit/news_cubit.dart' as _i766;
+import '../../features/profile/data/datasources/profile_remote_datasource/profile_remote_datasource.dart'
+    as _i923;
+import '../../features/profile/data/datasources/profile_remote_datasource/profile_remote_datasource_impl.dart'
+    as _i895;
+import '../../features/profile/data/repositories/profile_repository_impl.dart'
+    as _i334;
+import '../../features/profile/domain/repositories/profile_repository.dart'
+    as _i894;
+import '../../features/profile/domain/usecases/get_profile_use_case.dart'
+    as _i525;
+import '../../features/profile/domain/usecases/update_profile_use_case.dart'
+    as _i540;
+import '../../features/profile/presentation/cubit/profile_cubit.dart' as _i36;
 import '../../features/sources/data/datasources/sources_local_datasource/sources_local_datasource.dart'
     as _i641;
 import '../../features/sources/data/datasources/sources_local_datasource/sources_local_datasource_impl.dart'
@@ -97,6 +110,11 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i478.SourcesLocalDatasourceImpl());
     gh.factory<_i623.NewsLocalDatasource>(
         () => _i132.NewsLocalDatasourceImpl());
+    gh.factory<_i923.ProfileRemoteDataSource>(
+        () => _i895.ProfileRemoteDataSourceImpl(
+              firebaseAuth: gh<_i59.FirebaseAuth>(),
+              firestore: gh<_i974.FirebaseFirestore>(),
+            ));
     gh.factory<_i755.AuthRemoteDataSource>(() => _i998.AuthRemoteDataSourceImpl(
           firebaseAuth: gh<_i59.FirebaseAuth>(),
           firestore: gh<_i974.FirebaseFirestore>(),
@@ -123,12 +141,24 @@ extension GetItInjectableX on _i174.GetIt {
         () => _i694.LogoutUseCase(gh<_i742.AuthRepository>()));
     gh.factory<_i377.RegisterUseCase>(
         () => _i377.RegisterUseCase(gh<_i742.AuthRepository>()));
+    gh.factory<_i894.ProfileRepository>(() => _i334.ProfileRepositoryImpl(
+          gh<_i923.ProfileRemoteDataSource>(),
+          gh<_i117.AuthLocalDataSource>(),
+        ));
     gh.factory<_i147.GetNewsUseCase>(
         () => _i147.GetNewsUseCase(gh<_i258.NewsRepository>()));
     gh.factory<_i766.NewsCubit>(
         () => _i766.NewsCubit(gh<_i147.GetNewsUseCase>()));
+    gh.factory<_i525.GetProfileUseCase>(
+        () => _i525.GetProfileUseCase(gh<_i894.ProfileRepository>()));
+    gh.factory<_i540.UpdateProfileUseCase>(
+        () => _i540.UpdateProfileUseCase(gh<_i894.ProfileRepository>()));
     gh.factory<_i851.GetSourcesUseCase>(
         () => _i851.GetSourcesUseCase(gh<_i940.SourcesRepository>()));
+    gh.factory<_i36.ProfileCubit>(() => _i36.ProfileCubit(
+          gh<_i525.GetProfileUseCase>(),
+          gh<_i540.UpdateProfileUseCase>(),
+        ));
     gh.factory<_i678.AuthCubit>(() => _i678.AuthCubit(
           gh<_i938.LoginUseCase>(),
           gh<_i377.RegisterUseCase>(),

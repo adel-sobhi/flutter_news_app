@@ -9,9 +9,9 @@ import 'notification_store.dart';
 
 class AppNavigation {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  static final Set<String> _handledNotificationKeys = <String>{};
+  static final Set<String> handledNotificationKeys = <String>{};
 
-  static String _notificationKeyFromPayload(Map<String, dynamic> decoded) {
+  static String notificationKeyFromPayload(Map<String, dynamic> decoded) {
     final id = decoded['id']?.toString();
     if (id != null && id.isNotEmpty) return 'id:$id';
 
@@ -40,85 +40,114 @@ class AppNavigation {
       return;
     }
 
-    final context = navigatorKey.currentContext;
-    if (context == null) return;
-
-    // If we know the target source/category, open the real news page and let it resolve the
-    // article from the same API data that the user is already viewing.
-    if ((sourceId ?? '').isNotEmpty || (categoryId ?? '').isNotEmpty) {
-      if (notificationId != null && notificationId.isNotEmpty) {
-        try {
-          final store = NotificationStore();
-          store.markAsRead(notificationId);
-        } catch (_) {}
+    void openArticle() {
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        Future.delayed(const Duration(milliseconds: 250), openArticle);
+        return;
       }
 
-      final route = MaterialPageRoute(
-        builder: (_) => NewsPage(
-          categoryId: categoryId ?? 'general',
-          initialSourceId: sourceId,
-          initialArticleUrl: url,
-          initialTitle: title ?? body,
-          initialBody: body ?? title,
-          initialImageUrl: imageUrl,
-          initialAuthor: author,
-          initialPublishedAt: publishedAt,
-          initialDescription: description,
-          initialContent: content,
-        ),
+      if ((sourceId ?? '').isNotEmpty || (categoryId ?? '').isNotEmpty) {
+        if (notificationId != null && notificationId.isNotEmpty) {
+          try {
+            final store = NotificationStore();
+            store.markAsRead(notificationId);
+          } catch (_) {}
+        }
+
+        final route = MaterialPageRoute(
+          builder: (_) => NewsPage(
+            categoryId: categoryId ?? 'general',
+            initialSourceId: sourceId,
+            initialArticleUrl: url,
+            initialTitle: title ?? body,
+            initialBody: body ?? title,
+            initialImageUrl: imageUrl,
+            initialAuthor: author,
+            initialPublishedAt: publishedAt,
+            initialDescription: description,
+            initialContent: content,
+          ),
+        );
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final nav = navigatorKey.currentState;
+          if (nav == null || !nav.mounted) return;
+          nav.push(route);
+        });
+        return;
+      }
+
+      final article = NewsEntity(
+        title: title ?? body ?? 'News',
+        description: description ?? body ?? title ?? 'News details',
+        url: url,
+        urlToImage: imageUrl,
+        publishedAt: publishedAt ?? DateTime.now().toIso8601String(),
+        content: content ?? body ?? title ?? 'News details',
+        author: author,
       );
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final nav = navigatorKey.currentState;
-        if (nav == null || !nav.mounted) return;
-        nav.push(route);
-      });
-      return;
+      ArticleDetailsSheet.show(context, article);
     }
 
-    final article = NewsEntity(
-      title: title ?? body ?? 'News',
-      description: description ?? body ?? title ?? 'News details',
-      url: url,
-      urlToImage: imageUrl,
-      publishedAt: publishedAt ?? DateTime.now().toIso8601String(),
-      content: content ?? body ?? title ?? 'News details',
-      author: author,
-    );
-
-    ArticleDetailsSheet.show(context, article);
+    openArticle();
   }
 
-  static void handleNotificationPayload(String? payload) {
+  static void handleNotificationPayload(String? payload) async {
     if (payload == null || payload.isEmpty) {
       return;
     }
 
     final dedupeKey = payload.trim();
     final fallbackKey = Uri.tryParse(dedupeKey)?.toString() ?? dedupeKey;
-    if (_handledNotificationKeys.contains(fallbackKey)) {
+    if (handledNotificationKeys.contains(fallbackKey)) {
       return;
     }
-    _handledNotificationKeys.add(fallbackKey);
+    handledNotificationKeys.add(fallbackKey);
 
     try {
       final decoded = jsonDecode(payload);
       if (decoded is Map<String, dynamic>) {
-        final key = _notificationKeyFromPayload(decoded);
-        if (_handledNotificationKeys.contains(key)) {
+        final key = notificationKeyFromPayload(decoded);
+        if (handledNotificationKeys.contains(key)) {
           return;
         }
-        _handledNotificationKeys.add(key);
+        handledNotificationKeys.add(key);
 
-        final sourceId =
-            decoded['sourceId']?.toString() ?? decoded['source_id']?.toString();
+        final notificationId = decoded['id']?.toString();
+        final url = decoded['url']?.toString();
+        final store = NotificationStore();
+
+        ///نتاكد ان الاشعار متفتحش قبل كده
+        final alreadyHandled =
+            await store.hasBeenHandled(notificationId, url: url);
+        if (alreadyHandled) {
+          return;
+        }
+        await store.markAsHandled(notificationId, url: url);
+
+        final sourceValue = decoded['source'];
+        final sourceId = decoded['sourceId']?.toString() ??
+            decoded['source_id']?.toString() ??
+            (sourceValue is Map
+                ? (sourceValue['id']?.toString() ??
+                    sourceValue['sourceId']?.toString() ??
+                    sourceValue['source_id']?.toString())
+                : null);
+        final categoryValue = decoded['category'];
         final categoryId = decoded['categoryId']?.toString() ??
-            decoded['category_id']?.toString();
+            decoded['category_id']?.toString() ??
+            (categoryValue is Map
+                ? (categoryValue['id']?.toString() ??
+                    categoryValue['categoryId']?.toString() ??
+                    categoryValue['category_id']?.toString())
+                : null);
 
         goToArticle(
           decoded['title']?.toString(),
           decoded['body']?.toString(),
-          decoded['url']?.toString(),
+          url,
           decoded['imageUrl']?.toString(),
           sourceId: sourceId,
           categoryId: categoryId,
@@ -126,17 +155,23 @@ class AppNavigation {
           publishedAt: decoded['publishedAt']?.toString(),
           description: decoded['description']?.toString(),
           content: decoded['content']?.toString(),
-          notificationId: decoded['id']?.toString(),
+          notificationId: notificationId,
         );
         return;
       }
     } catch (_) {
-      // ignore and fallback to browser if payload is plain URL
     }
 
     final uri = Uri.tryParse(payload);
     if (uri != null && uri.hasScheme) {
-      goToArticle('News', 'Open article', uri.toString(), null);
+      final url = uri.toString();
+      final store = NotificationStore();
+      final alreadyHandled = await store.hasBeenHandled(null, url: url);
+      if (alreadyHandled) {
+        return;
+      }
+      await store.markAsHandled(null, url: url);
+      goToArticle('News', 'Open article', url, null);
     }
   }
 }

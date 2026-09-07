@@ -10,8 +10,6 @@ import 'auth_remote_datasource.dart';
 
 @Injectable(as: AuthRemoteDataSource)
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  // final ApiManager apiManager;
-  // AuthRemoteDataSourceImpl({required this.apiManager});
   final FirebaseAuth firebaseAuth;
   final FirebaseFirestore firestore;
 
@@ -32,12 +30,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final userDoc =
           await firestore.collection('users').doc(credential.user?.uid).get();
 
-      final username = userDoc.data()?['username'];
+      final data = userDoc.data();
 
       return Right(LoginResponseModel(
         id: credential.user?.uid.hashCode,
         email: credential.user?.email,
-        username: username,
+        username: data?['username'],
+        firstName: data?['firstName'],
+        lastName: data?['lastName'],
+        image: data?['image'],
         accessToken: await credential.user?.getIdToken(),
       ));
     } on FirebaseAuthException catch (e) {
@@ -54,6 +55,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String email,
     required String username,
     required String password,
+    String? image,
   }) async {
     try {
       final credential = await firebaseAuth.createUserWithEmailAndPassword(
@@ -66,6 +68,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         'lastName': lastName,
         'email': email,
         'username': username,
+        'image': image,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -75,6 +78,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         lastName: lastName,
         email: credential.user?.email,
         username: username,
+        image: image,
       ));
     } on FirebaseAuthException catch (e) {
       return Left(ServerError(errorMessage: e.message ?? 'Register failed'));
@@ -82,47 +86,4 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return Left(Errors(errorMessage: 'An unexpected error occurred'));
     }
   }
-
-// @override
-// Future<Either<Errors, LoginResponseModel>> login({
-//   required String username,
-//   required String password,
-// }) async {
-//   try {
-//     final response = await apiManager.login(username: username, password: password);
-//     return Right(response);
-//   } on NetworkException catch (e) {
-//     return Left(NetworkError(errorMessage: e.message));
-//   } on ServerException catch (e) {
-//     return Left(ServerError(errorMessage: e.message));
-//   } catch (e) {
-//     return Left(Errors(errorMessage: 'An unexpected error occurred'));
-//   }
-// }
-
-// @override
-// Future<Either<Errors, RegisterResponseModel>> register({
-//   required String firstName,
-//   required String lastName,
-//   required String email,
-//   required String username,
-//   required String password,
-// }) async {
-//   try {
-//     final response = await apiManager.register(
-//       firstName: firstName,
-//       lastName: lastName,
-//       email: email,
-//       username: username,
-//       password: password,
-//     );
-//     return Right(response);
-//   } on NetworkException catch (e) {
-//     return Left(NetworkError(errorMessage: e.message));
-//   } on ServerException catch (e) {
-//     return Left(ServerError(errorMessage: e.message));
-//   } catch (e) {
-//     return Left(Errors(errorMessage: 'An unexpected error occurred'));
-//   }
-// }
 }

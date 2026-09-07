@@ -76,20 +76,17 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 32),
                   AuthTextField(
-                      // controller: usernameController,
-                      // hint: 'Username',
-                      // icon: Icons.person_outline,
-                      // validator: (value) => (value == null || value.trim().isEmpty)
-                      //     ? 'Please enter your username'
-                      //     : null,
                       controller: emailController,
                       hint: 'Email',
                       icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty)
+                        if (value == null || value.trim().isEmpty) {
                           return 'Required';
-                        if (!value.contains('@')) return 'Enter a valid email';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Enter a valid email';
+                        }
                         return null;
                       }),
                   const SizedBox(height: 16),

@@ -43,6 +43,7 @@ class NewsPage extends StatefulWidget {
 
 class _NewsPageState extends State<NewsPage> {
   String? selectedSourceId;
+  String? _lastTriggeredInitialArticleUrl;
 
   final GlobalKey<NewsListSectionState> _newsListKey =
       GlobalKey<NewsListSectionState>();
@@ -56,6 +57,31 @@ class _NewsPageState extends State<NewsPage> {
     });
   }
 
+  void _maybeOpenInitialArticle() {
+    final initialArticleUrl = widget.initialArticleUrl;
+    if (initialArticleUrl == null || initialArticleUrl.isEmpty) {
+      return;
+    }
+
+    if (_lastTriggeredInitialArticleUrl == initialArticleUrl) {
+      return;
+    }
+
+    _lastTriggeredInitialArticleUrl = initialArticleUrl;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final listState = _newsListKey.currentState;
+      if (listState == null) {
+        _lastTriggeredInitialArticleUrl = null;
+        _maybeOpenInitialArticle();
+        return;
+      }
+
+      listState.openArticleByUrl(initialArticleUrl);
+    });
+  }
+
   void selectSource(int index, String sourceId) {
     context.read<SourcesCubit>().changeTabIndex(index);
     if (selectedSourceId != sourceId) {
@@ -63,13 +89,7 @@ class _NewsPageState extends State<NewsPage> {
       context.read<NewsCubit>().getNews(sourceId);
     }
 
-    if (widget.initialArticleUrl != null &&
-        widget.initialArticleUrl!.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _newsListKey.currentState?.openArticleByUrl(widget.initialArticleUrl);
-      });
-    }
+    _maybeOpenInitialArticle();
   }
 
   @override
@@ -144,14 +164,8 @@ class _NewsPageState extends State<NewsPage> {
 
             // If this was opened from a notification, open the exact matching article after the
             // source list is ready.
-            if (widget.initialArticleUrl != null &&
-                widget.initialArticleUrl!.isNotEmpty) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!mounted) return;
-                _newsListKey.currentState
-                    ?.openArticleByUrl(widget.initialArticleUrl);
-              });
-            }
+            _maybeOpenInitialArticle();
+
             return Column(
               children: [
                 SourceHorizontalList(

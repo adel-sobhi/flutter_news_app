@@ -16,5 +16,6 @@ abstract class AuthRemoteDataSource {
     required String email,
     required String username,
     required String password,
+    String? image,
   });
 }

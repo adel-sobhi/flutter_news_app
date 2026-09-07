@@ -23,7 +23,7 @@ class FcmService {
   final FirebaseMessaging messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin localNotifications =
   FlutterLocalNotificationsPlugin();
-  final NotificationStore _notificationStore = NotificationStore();
+  final NotificationStore notificationStore = NotificationStore();
 
   Future<void> initialize() async {
     try {
@@ -87,23 +87,63 @@ class FcmService {
     }
   }
 
-  Future<void> _saveIncomingNotification(RemoteMessage message) async {
-    final title = message.data['title']?.toString() ??
+  static String? _readStringValue(
+      Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value == null || value is Map || value is List) continue;
+      final text = value.toString();
+      if (text.isNotEmpty) return text;
+    }
+    return null;
+  }
+
+  static String? _readSourceOrCategoryId(
+      Map<String, dynamic> data, List<String> keys) {
+    final direct = _readStringValue(data, keys);
+    if (direct != null && direct.isNotEmpty) return direct;
+
+    final sourceData = data['source'];
+    if (sourceData is Map) {
+      for (final key in ['id', 'sourceId', 'source_id']) {
+        if (sourceData[key] != null) {
+          final value = sourceData[key].toString();
+          if (value.isNotEmpty) return value;
+        }
+      }
+    }
+
+    final categoryData = data['category'];
+    if (categoryData is Map) {
+      for (final key in ['id', 'categoryId', 'category_id']) {
+        if (categoryData[key] != null) {
+          final value = categoryData[key].toString();
+          if (value.isNotEmpty) return value;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> saveIncomingNotification(RemoteMessage message) async {
+    final data = message.data;
+    final title = _readStringValue(data, ['title']) ??
         message.notification?.title ??
         'Breaking News';
-    final body = message.data['body']?.toString() ??
+    final body = _readStringValue(data, ['body']) ??
         message.notification?.body ??
         'New article available';
-    final url = message.data['url']?.toString();
-    final imageUrl = message.data['imageUrl']?.toString();
-    final sourceId = message.data['sourceId']?.toString() ??
-        message.data['source_id']?.toString();
-    final categoryId = message.data['categoryId']?.toString() ??
-        message.data['category_id']?.toString();
-    final author = message.data['author']?.toString();
-    final publishedAt = message.data['publishedAt']?.toString();
-    final description = message.data['description']?.toString();
-    final content = message.data['content']?.toString();
+    final url = _readStringValue(data, ['url', 'articleUrl']);
+    final imageUrl = _readStringValue(data, ['imageUrl', 'image_url']);
+    final sourceId =
+        _readSourceOrCategoryId(data, ['sourceId', 'source_id', 'source']);
+    final categoryId = _readSourceOrCategoryId(
+        data, ['categoryId', 'category_id', 'category']);
+    final author = _readStringValue(data, ['author']);
+    final publishedAt = _readStringValue(data, ['publishedAt', 'published_at']);
+    final description = _readStringValue(data, ['description']);
+    final content = _readStringValue(data, ['content']);
     final notificationId =
         message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}';
 
@@ -122,39 +162,43 @@ class FcmService {
       createdAt: DateTime.now(),
     );
 
-    await _notificationStore.addNotification(notification);
+    await notificationStore.addNotification(notification);
 
-    // update app badge to reflect new unread count
     await updateBadgeCount();
   }
 
   void listenToForegroundMessages() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      await _saveIncomingNotification(message);
+      await saveIncomingNotification(message);
 
       final notification = message.notification;
       if (notification == null) return;
 
-      final unreadCount = await _notificationStore.getUnreadCount();
+      final unreadCount = await notificationStore.getUnreadCount();
 
       final payload = jsonEncode({
         'id': message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}',
-        'title': message.data['title']?.toString() ??
+        'title': _readStringValue(message.data, ['title']) ??
             notification.title ??
             'Breaking News',
-        'body': message.data['body']?.toString() ??
+        'body': _readStringValue(message.data, ['body']) ??
             notification.body ??
             'New article available',
-        'url': message.data['url']?.toString(),
-        'imageUrl': message.data['imageUrl']?.toString(),
-        'sourceId': message.data['sourceId']?.toString() ??
-            message.data['source_id']?.toString(),
-        'categoryId': message.data['categoryId']?.toString() ??
-            message.data['category_id']?.toString(),
-        'author': message.data['author']?.toString(),
-        'publishedAt': message.data['publishedAt']?.toString(),
-        'description': message.data['description']?.toString(),
-        'content': message.data['content']?.toString(),
+        'url': _readStringValue(message.data, ['url', 'articleUrl']),
+        'imageUrl': _readStringValue(message.data, ['imageUrl', 'image_url']),
+        'sourceId': _readSourceOrCategoryId(
+          message.data,
+          ['sourceId', 'source_id', 'source'],
+        ),
+        'categoryId': _readSourceOrCategoryId(
+          message.data,
+          ['categoryId', 'category_id', 'category'],
+        ),
+        'author': _readStringValue(message.data, ['author']),
+        'publishedAt':
+            _readStringValue(message.data, ['publishedAt', 'published_at']),
+        'description': _readStringValue(message.data, ['description']),
+        'content': _readStringValue(message.data, ['content']),
       });
 
       await localNotifications.show(
@@ -177,7 +221,6 @@ class FcmService {
         payload: payload,
       );
 
-      // Also try to set the iOS app badge explicitly
       await updateBadgeCount();
     });
   }
@@ -186,22 +229,27 @@ class FcmService {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       final payload = jsonEncode({
         'id': message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}',
-        'title': message.data['title']?.toString() ??
+        'title': _readStringValue(message.data, ['title']) ??
             message.notification?.title ??
             'Breaking News',
-        'body': message.data['body']?.toString() ??
+        'body': _readStringValue(message.data, ['body']) ??
             message.notification?.body ??
             'New article available',
-        'url': message.data['url']?.toString(),
-        'imageUrl': message.data['imageUrl']?.toString(),
-        'sourceId': message.data['sourceId']?.toString() ??
-            message.data['source_id']?.toString(),
-        'categoryId': message.data['categoryId']?.toString() ??
-            message.data['category_id']?.toString(),
-        'author': message.data['author']?.toString(),
-        'publishedAt': message.data['publishedAt']?.toString(),
-        'description': message.data['description']?.toString(),
-        'content': message.data['content']?.toString(),
+        'url': _readStringValue(message.data, ['url', 'articleUrl']),
+        'imageUrl': _readStringValue(message.data, ['imageUrl', 'image_url']),
+        'sourceId': _readSourceOrCategoryId(
+          message.data,
+          ['sourceId', 'source_id', 'source'],
+        ),
+        'categoryId': _readSourceOrCategoryId(
+          message.data,
+          ['categoryId', 'category_id', 'category'],
+        ),
+        'author': _readStringValue(message.data, ['author']),
+        'publishedAt':
+            _readStringValue(message.data, ['publishedAt', 'published_at']),
+        'description': _readStringValue(message.data, ['description']),
+        'content': _readStringValue(message.data, ['content']),
       });
       AppNavigation.handleNotificationPayload(payload);
     });
@@ -210,34 +258,35 @@ class FcmService {
       if (message == null) return;
       final payload = jsonEncode({
         'id': message.messageId ?? '${DateTime.now().millisecondsSinceEpoch}',
-        'title': message.data['title']?.toString() ??
+        'title': _readStringValue(message.data, ['title']) ??
             message.notification?.title ??
             'Breaking News',
-        'body': message.data['body']?.toString() ??
+        'body': _readStringValue(message.data, ['body']) ??
             message.notification?.body ??
             'New article available',
-        'url': message.data['url']?.toString(),
-        'imageUrl': message.data['imageUrl']?.toString(),
-        'sourceId': message.data['sourceId']?.toString() ??
-            message.data['source_id']?.toString(),
-        'categoryId': message.data['categoryId']?.toString() ??
-            message.data['category_id']?.toString(),
-        'author': message.data['author']?.toString(),
-        'publishedAt': message.data['publishedAt']?.toString(),
-        'description': message.data['description']?.toString(),
-        'content': message.data['content']?.toString(),
+        'url': _readStringValue(message.data, ['url', 'articleUrl']),
+        'imageUrl': _readStringValue(message.data, ['imageUrl', 'image_url']),
+        'sourceId': _readSourceOrCategoryId(
+          message.data,
+          ['sourceId', 'source_id', 'source'],
+        ),
+        'categoryId': _readSourceOrCategoryId(
+          message.data,
+          ['categoryId', 'category_id', 'category'],
+        ),
+        'author': _readStringValue(message.data, ['author']),
+        'publishedAt':
+            _readStringValue(message.data, ['publishedAt', 'published_at']),
+        'description': _readStringValue(message.data, ['description']),
+        'content': _readStringValue(message.data, ['content']),
       });
       AppNavigation.handleNotificationPayload(payload);
     });
   }
 
-  /// Update the app badge (no-op fallback).
-  /// Setting the system app icon badge reliably requires a dedicated package
-  /// (e.g., flutter_app_badger) or native platform code. For now this logs
-  /// the unread count so behavior is predictable and compilation succeeds.
   Future<void> updateBadgeCount() async {
     try {
-      final unread = await _notificationStore.getUnreadCount();
+      final unread = await notificationStore.getUnreadCount();
       debugPrint('Unread notifications: $unread');
     } catch (e) {
       debugPrint('Failed to compute unread count: $e');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/di/di.dart';
 import '../../../../core/services/notification_store.dart';
 import '../../../../core/utils/app_styles.dart';
 import '../../../authentication/presentation/cubit/auth_cubit.dart';
@@ -8,6 +9,8 @@ import '../../../authentication/presentation/cubit/auth_state.dart';
 import '../../../authentication/presentation/pages/login_page.dart';
 import '../../../notifications/presentation/pages/notifications_page.dart';
 import '../../../news/presentation/pages/news_page.dart';
+import '../../../profile/presentation/cubit/profile_cubit.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../sources/presentation/cubit/sources_cubit.dart';
 import '../../data/models/category_model.dart';
 
@@ -20,10 +23,6 @@ class CategoriesScreen extends StatefulWidget {
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
   final NotificationStore _notificationStore = NotificationStore();
-
-  Future<int> _getUnreadCount() => _notificationStore.getUnreadCount();
-
-  Stream<int> get _unreadCountStream => _notificationStore.unreadCountStream;
 
   @override
   void initState() {
@@ -55,10 +54,32 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       },
       builder: (context, state) {
         return Scaffold(
+          backgroundColor: const Color(0xFFF7F8FB),
           appBar: AppBar(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            elevation: 0,
             title: Text(
               'News Categories',
-              style: AppStyles.appBarTitle,
+              style: AppStyles.appBarTitle.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            leading: IconButton(
+              icon:
+                  const Icon(Icons.person_outline_rounded, color: Colors.black),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider(
+                      create: (_) => getIt<ProfileCubit>(),
+                      child: const ProfilePage(),
+                    ),
+                  ),
+                );
+              },
             ),
             centerTitle: true,
             actions: [
@@ -123,7 +144,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Icon(Icons.logout, color: Colors.redAccent),
+                    : const Icon(Icons.logout_rounded, color: Colors.redAccent),
                 onPressed: () {
                   context.read<AuthCubit>().logout();
                 },
@@ -147,41 +168,44 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     ),
                   );
                 },
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
                 child: Container(
-                  height: 85,
+                  height: 92,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
                   child: Row(
                     children: [
                       Container(
-                        width: 55,
-                        height: 55,
+                        width: 58,
+                        height: 58,
                         decoration: BoxDecoration(
-                          color: category.color.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
+                          color: category.color.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: Icon(
                           category.icon,
                           color: category.color,
-                          size: 28,
+                          size: 26,
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Text(
                           category.title,
-                          style: AppStyles.bodyMediumBold,
+                          style: AppStyles.bodyMediumBold.copyWith(
+                            fontSize: 16,
+                            color: const Color(0xFF1F2430),
+                          ),
                         ),
                       ),
                       const Icon(

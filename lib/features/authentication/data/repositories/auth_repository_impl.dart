@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
+
 import '../../../../core/errors/errors.dart';
 import '../../domain/entities/login_response_entities.dart';
 import '../../domain/entities/register_response_entities.dart';
@@ -28,6 +29,13 @@ class AuthRepositoryImpl implements AuthRepository {
         if (response.accessToken != null) {
           await localDataSource.cacheToken(response.accessToken!);
         }
+        await localDataSource.cacheUserProfile(
+          firstName: response.firstName,
+          lastName: response.lastName,
+          email: response.email,
+          username: response.username,
+          image: response.image,
+        );
         return Right(response);
       },
     );
@@ -40,6 +48,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String username,
     required String password,
+    String? image,
   }) async {
     final either = await remoteDataSource.register(
       firstName: firstName,
@@ -47,13 +56,24 @@ class AuthRepositoryImpl implements AuthRepository {
       email: email,
       username: username,
       password: password,
+      image: image,
     );
 
     return either.fold(
           (error) async => Left(error),
-          (response) async => Right(response),
+      (response) async {
+        await localDataSource.cacheUserProfile(
+          firstName: response.firstName,
+          lastName: response.lastName,
+          email: response.email,
+          username: response.username,
+          image: response.image,
+        );
+        return Right(response);
+      },
     );
   }
+
   @override
   Future<bool> isLoggedIn() async {
     final token = await localDataSource.getCachedToken();
@@ -61,7 +81,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> logout() {
-    return localDataSource.clearToken();
+  Future<void> logout() async {
+    await localDataSource.clearToken();
+    await localDataSource.clearUserProfile();
   }
 }

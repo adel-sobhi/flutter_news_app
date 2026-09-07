@@ -23,3 +23,15 @@ class AuthError extends AuthState {
   final String message;
   AuthError(this.message);
 }
+
+class ProfileImageCompressing extends AuthState {
+  final int progress;
+
+  ProfileImageCompressing({this.progress = 0});
+}
+
+class ProfileImagePicked extends AuthState {
+  final String base64Image;
+
+  ProfileImagePicked(this.base64Image);
+}

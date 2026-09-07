@@ -14,17 +14,16 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  final NotificationStore _notificationStore = NotificationStore();
-  final Set<String> _expandedIds = <String>{};
+  final NotificationStore notificationStore = NotificationStore();
+  final Set<String> expandedIds = <String>{};
 
-  Future<List<NotificationEntity>> _loadNotifications() async {
-    return _notificationStore.getNotifications();
+  Future<List<NotificationEntity>> loadNotifications() async {
+    return notificationStore.getNotifications();
   }
 
-  Future<void> _markAsReadOnly(NotificationEntity notification) async {
+  Future<void> markAsReadOnly(NotificationEntity notification) async {
     if (!notification.isRead) {
-      await _notificationStore.markAsRead(notification.id);
-      // update badge count after marking as read
+      await notificationStore.markAsRead(notification.id);
       try {
         await FcmService().updateBadgeCount();
       } catch (_) {}
@@ -34,18 +33,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  Future<void> _toggleExpanded(
+  Future<void> toggleExpanded(
       NotificationEntity notification, bool isExpanded) async {
     if (isExpanded) {
-      _expandedIds.add(notification.id);
-      await _markAsReadOnly(notification);
+      expandedIds.add(notification.id);
+      await markAsReadOnly(notification);
     } else {
-      _expandedIds.remove(notification.id);
+      expandedIds.remove(notification.id);
     }
   }
 
-  Future<void> _openFullArticle(NotificationEntity notification) async {
-    await _markAsReadOnly(notification);
+  Future<void> openFullArticle(NotificationEntity notification) async {
+    await markAsReadOnly(notification);
 
     AppNavigation.goToArticle(
       notification.title,
@@ -62,8 +61,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  Future<void> _deleteReadNotifications() async {
-    await _notificationStore.deleteReadNotifications();
+  Future<void> deleteReadNotifications() async {
+    await notificationStore.deleteReadNotifications();
     if (mounted) {
       setState(() {});
     }
@@ -81,11 +80,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppColors.background,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
         foregroundColor: AppColors.textPrimary,
         actions: [
           FutureBuilder<List<NotificationEntity>>(
-            future: _loadNotifications(),
+            future: loadNotifications(),
             builder: (context, snapshot) {
               final notifications = snapshot.data ?? <NotificationEntity>[];
               if (!notifications.any((item) => item.isRead)) {
@@ -93,16 +95,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
               }
 
               return IconButton(
-                onPressed: _deleteReadNotifications,
+                onPressed: deleteReadNotifications,
                 icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                tooltip: 'Delete all read notifications',
               );
             },
           ),
         ],
       ),
       body: FutureBuilder<List<NotificationEntity>>(
-        future: _loadNotifications(),
+        future: loadNotifications(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -145,10 +146,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 child: ListView.separated(
                   itemCount: notifications.length,
                   padding: const EdgeInsets.all(12),
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final notification = notifications[index];
-                    final isExpanded = _expandedIds.contains(notification.id);
+                    final isExpanded = expandedIds.contains(notification.id);
 
                     return Container(
                         decoration: BoxDecoration(
@@ -173,8 +175,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   const EdgeInsets.symmetric(horizontal: 14),
                               childrenPadding:
                                   const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                              onExpansionChanged: (value) =>
-                                  _toggleExpanded(notification, value),
+                              onExpansionChanged: (value) async {
+                                if (value &&
+                                    notification.url != null &&
+                                    notification.url!.isNotEmpty) {
+                                  await openFullArticle(notification);
+                                }
+                                await toggleExpanded(notification, value);
+                              },
                               initiallyExpanded: isExpanded,
                               leading: CircleAvatar(
                                 backgroundColor: notification.isRead
@@ -266,7 +274,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                     alignment: Alignment.centerRight,
                                     child: TextButton.icon(
                                       onPressed: () =>
-                                          _openFullArticle(notification),
+                                          openFullArticle(notification),
                                       style: TextButton.styleFrom(
                                         foregroundColor: AppColors.primary,
                                       ),

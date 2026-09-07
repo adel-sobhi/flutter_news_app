@@ -17,6 +17,7 @@ class RegisterUseCase {
     required String email,
     required String username,
     required String password,
+    String? image,
   }) {
     return repository.register(
       firstName: firstName,
@@ -24,6 +25,7 @@ class RegisterUseCase {
       email: email,
       username: username,
       password: password,
+      image: image,
     );
   }
 }

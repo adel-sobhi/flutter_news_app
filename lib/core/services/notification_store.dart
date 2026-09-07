@@ -15,6 +15,82 @@ class NotificationStore {
 
   Stream<int> get unreadCountStream => _unreadCountController.stream;
 
+  Future<bool> hasBeenHandled(String? notificationId, {String? url}) async {
+    if ((notificationId == null || notificationId.isEmpty) &&
+        (url == null || url.isEmpty)) {
+      return false;
+    }
+
+    final db = await database;
+    final conditions = <String>[];
+    final args = <Object>[];
+
+    if (notificationId != null && notificationId.isNotEmpty) {
+      conditions.add('id = ?');
+      args.add(notificationId);
+    }
+
+    if (url != null && url.isNotEmpty) {
+      conditions.add('url = ?');
+      args.add(url);
+    }
+
+    final rows = await db.query(
+      tableName,
+      columns: ['openedAt'],
+      where: conditions.join(' OR '),
+      whereArgs: args,
+      limit: 1,
+    );
+
+    if (rows.isEmpty) return false;
+    final value = rows.first['openedAt']?.toString();
+    return value != null && value.isNotEmpty;
+  }
+
+  Future<void> markAsHandled(String? notificationId, {String? url}) async {
+    if ((notificationId == null || notificationId.isEmpty) &&
+        (url == null || url.isEmpty)) {
+      return;
+    }
+
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+
+    final row = await db.query(
+      tableName,
+      columns: ['id', 'url'],
+      where: notificationId != null && notificationId.isNotEmpty
+          ? 'id = ?'
+          : 'url = ?',
+      whereArgs: [
+        if (notificationId != null && notificationId.isNotEmpty)
+          notificationId
+        else
+          url
+      ],
+      limit: 1,
+    );
+
+    if (row.isEmpty) {
+      return;
+    }
+
+    await db.update(
+      tableName,
+      {'openedAt': now},
+      where: notificationId != null && notificationId.isNotEmpty
+          ? 'id = ?'
+          : 'url = ?',
+      whereArgs: [
+        if (notificationId != null && notificationId.isNotEmpty)
+          notificationId
+        else
+          url
+      ],
+    );
+  }
+
   void notifyUnreadCountChanged() {
     getUnreadCount().then((count) => _unreadCountController.add(count));
   }
@@ -46,6 +122,7 @@ class NotificationStore {
             description TEXT,
             content TEXT,
             isRead INTEGER NOT NULL DEFAULT 0,
+            openedAt TEXT,
             createdAt TEXT NOT NULL
           )
         ''');
@@ -129,12 +206,6 @@ class NotificationStore {
       where: 'isRead = ?',
       whereArgs: [1],
     );
-    notifyUnreadCountChanged();
-  }
-
-  Future<void> clear() async {
-    final db = await database;
-    await db.delete(tableName);
     notifyUnreadCountChanged();
   }
 }
